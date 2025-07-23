@@ -1,0 +1,1 @@
+export { addTextToCanvas, TextSettings } from './textRendering';
