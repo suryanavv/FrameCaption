@@ -18,6 +18,8 @@ import { PositionControl } from "@/components/ui/position-control";
 import { Toaster } from "@/components/ui/sonner";
 import { Separator } from "@/components/ui/separator";
 import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono } from "@/components/fonts";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { HexColorPicker } from "react-colorful";
 
 const googleFonts = [
     { label: "Poppins", value: "Poppins", className: poppins.variable },
@@ -38,17 +40,32 @@ const googleFonts = [
     { label: "Space Mono", value: "Space Mono", className: spaceMono.variable },
 ];
 
+const getCenterPosition = (img?: HTMLImageElement) => ({
+    x: (img?.width ?? 1000) / 2,
+    y: (img?.height ?? 1000) / 2,
+});
+
 const defaultTextSettings: TextSettings = {
     font: 'Poppins',
     fontSize: 50,
     color: '#000000',
     content: 'Your Text Here',
-    position: { x: 50, y: 100 },
+    position: getCenterPosition(),
     opacity: 1,
     letterSpacing: 0,
     lineHeight: 1.2,
     alignment: 'start'
 };
+
+// Helper to map between canvas and control coordinates
+const toControlCoords = (pos: { x: number; y: number }, width: number, height: number) => ({
+    x: pos.x - width / 2,
+    y: pos.y - height / 2,
+});
+const toCanvasCoords = (pos: { x: number; y: number }, width: number, height: number) => ({
+    x: pos.x + width / 2,
+    y: pos.y + height / 2,
+});
 
 export default function EditorPage() {
     const [image, setImage] = useState<File | null>(null);
@@ -72,8 +89,17 @@ export default function EditorPage() {
             img.src = URL.createObjectURL(file);
             img.onload = async () => {
                 setOriginalImage(img);
-                // const fg = await removeImageBackground(img);
-                // setForegroundImage(fg);
+                // Center the active text on image load
+                setTexts((prev) => {
+                    const newTexts = [...prev];
+                    newTexts[activeTextIndex] = {
+                        ...newTexts[activeTextIndex],
+                        position: getCenterPosition(img),
+                    };
+                    return newTexts;
+                });
+                const fg = await removeImageBackground(img);
+                setForegroundImage(fg);
             };
         }
     };
@@ -112,14 +138,16 @@ export default function EditorPage() {
         setTexts(newTexts);
     };
 
+    // Update handlePositionChange to map from control to canvas coordinates
     const handlePositionChange = (pos: { x: number; y: number }) => {
         const newTexts = [...texts];
-        newTexts[activeTextIndex].position = pos;
+        newTexts[activeTextIndex].position = toCanvasCoords(pos, maxX, maxY);
         setTexts(newTexts);
     };
 
     const addText = () => {
-        setTexts([...texts, { ...defaultTextSettings, content: `New Text ${texts.length + 1}` }]);
+        const center = getCenterPosition(originalImage ?? undefined);
+        setTexts([...texts, { ...defaultTextSettings, content: `New Text ${texts.length + 1}`, position: center }]);
         setActiveTextIndex(texts.length);
     };
 
@@ -147,8 +175,9 @@ export default function EditorPage() {
     };
 
     const resetTextEdits = () => {
+        const center = getCenterPosition(originalImage ?? undefined);
         const newTexts = [...texts];
-        newTexts[activeTextIndex] = defaultTextSettings;
+        newTexts[activeTextIndex] = { ...defaultTextSettings, position: center };
         setTexts(newTexts);
     };
 
@@ -156,7 +185,7 @@ export default function EditorPage() {
         setImage(null);
         setOriginalImage(null);
         setForegroundImage(null);
-        setTexts([defaultTextSettings]);
+        setTexts([{ ...defaultTextSettings, position: getCenterPosition() }]);
         setActiveTextIndex(0);
         resetImageEdits();
     };
@@ -166,14 +195,14 @@ export default function EditorPage() {
     const maxY = originalImage ? originalImage.height : 1000;
 
     return (
-        <div className="flex flex-col lg:flex-row py-2 gap-2 w-full h-screen overflow-hidden">
+        <div className="flex flex-col lg:flex-row p-1.5  w-full h-screen overflow-hidden">
 
             {/* Responsive Layout with Image */}
-            <div className="flex flex-row gap-2 w-full">
+            <div className="flex flex-row gap-1.5 w-full">
                 {/* Left Sidebar - Controls */}
-                <aside className="flex flex-col gap-1 ml-2 w-full lg:max-w-[220px] h-full overflow-hidden order-2 lg:order-1">
+                <aside className="flex flex-col gap-1 w-full lg:max-w-[205px] h-full overflow-hidden order-2 lg:order-1">
 
-                    <header className="flex h-10 items-center justify-center bg-secondary backdrop-blur-md rounded-2xl border border-primary/10 shadow-sm w-full max-w-[240px]">
+                    <header className="flex h-10 items-center justify-center bg-secondary backdrop-blur-md rounded-xl border border-primary/10 w-full max-w-[240px]">
                         <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                             <Image src="/icon.svg" alt="POVImage" width={20} height={20} />
                             POVImage
@@ -185,15 +214,15 @@ export default function EditorPage() {
                                 value="text"
                                 className="flex-1 text-xs border border-primary/20 p-2 items-center justify-center gap-0.5"
                             >
-                                <Type className="w-3 h-3" />
-                                Text
+                                <Type className="w-2.5 h-2.5" />
+                                <span className="text-[0.625rem]">Text</span>
                             </TabsTrigger>
                             <TabsTrigger
                                 value="image"
                                 className="flex-1 text-xs border border-primary/20 p-2 items-center justify-center gap-0.5"
                             >
-                                <ImageIcon className="w-3 h-3" />
-                                Image
+                                <ImageIcon className="w-2.5 h-2.5" />
+                                <span className="text-[0.625rem]">Image</span>
                             </TabsTrigger>
                         </TabsList>
                     </Tabs>
@@ -206,7 +235,7 @@ export default function EditorPage() {
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
                                             <Label className="text-xs text-muted-foreground">Text Layers</Label>
-                                            <Button variant="ghost" size="sm" onClick={addText} className="text-xs h-7 px-2">
+                                            <Button variant="outline" size="sm" onClick={addText} className="text-xs h-7 px-2">
                                                 Add
                                             </Button>
                                         </div>
@@ -253,14 +282,34 @@ export default function EditorPage() {
                                     </div>
 
                                     {/* Color */}
-                                    <div className="flex flex-col gap-2">
+                                    <div className="flex flex-col gap-2 w-full">
                                         <Label className="text-xs text-muted-foreground">Color</Label>
-                                        <Input
-                                            type="color"
-                                            value={activeText.color}
-                                            onChange={(e) => handleTextChange('color', e.target.value)}
-                                            className="h-9"
-                                        />
+                                        <div className="flex items-center gap-2 w-full relative">
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <span
+                                                        className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-primary/10 absolute left-2 top-1/2 -translate-y-1/2"
+                                                        style={{ backgroundColor: activeText.color }}
+                                                    />
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-2" align="start">
+                                                    <HexColorPicker
+                                                        color={activeText.color}
+                                                        onChange={(color) => handleTextChange('color', color)}
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                            <Input
+                                                className="pl-10 h-9 text-xs"
+                                                type="text"
+                                                value={activeText.color.startsWith("#") ? activeText.color : `#${activeText.color}`}
+                                                placeholder="Color"
+                                                onChange={(e) => {
+                                                    const color = e.target.value.startsWith("#") ? e.target.value : `#${e.target.value}`;
+                                                    handleTextChange('color', color);
+                                                }}
+                                            />
+                                        </div>
                                     </div>
 
                                     {/* Typography Controls */}
@@ -295,7 +344,7 @@ export default function EditorPage() {
                                         />
                                     </div>
 
-                                    <Button variant="ghost" size="sm" onClick={resetTextEdits} className="w-full h-8 text-xs">
+                                    <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-8 text-xs">
                                         <RefreshCw className="w-3 h-3 mr-1" />
                                         Reset
                                     </Button>
@@ -346,7 +395,7 @@ export default function EditorPage() {
                                         </div>
                                     </div>
 
-                                    <Button variant="ghost" size="sm" onClick={resetImageEdits} className="w-full h-8 text-xs">
+                                    <Button variant="outline" size="sm" onClick={resetImageEdits} className="w-full h-8 text-xs">
                                         <RefreshCw className="w-3 h-3 mr-1" />
                                         Reset
                                     </Button>
@@ -402,17 +451,17 @@ export default function EditorPage() {
                 )}
 
                 {/* Right Sidebar - Position Control (Desktop only) */}
-                <aside className="flex flex-col gap-2 w-full lg:max-w-[220px] h-full overflow-hidden order-3">
+                <aside className="flex flex-col gap-2 w-full lg:max-w-[205px] h-full overflow-hidden order-3">
                     <div className="h-10 w-full">
                         <ThemeSwitch />
                     </div>
-                    <div className="flex flex-col gap-4 w-full bg-secondary/50 backdrop-blur-sm rounded-2xl p-3 border border-primary/10 h-full">
+                    <div className="flex flex-col gap-2 w-full bg-secondary rounded-2xl p-4 border border-primary/10">
                         <PositionControl
-                            value={activeText.position}
+                            value={toControlCoords(activeText.position, maxX, maxY)}
                             onChange={handlePositionChange}
                             width={maxX}
                             height={maxY}
-                            className="w-full h-full"
+                            className="max-w-[140px] max-h-[140px]"
                         />
                     </div>
                 </aside>
