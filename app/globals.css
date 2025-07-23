@@ -122,23 +122,13 @@
   }
 }
 
-/* Remove scrollbars */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-
-.no-scrollbar {
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  overflow-y: auto;
-}
-
-/* Global scrollbar removal */
+/* Hide scrollbar for all elements */
 * {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
 }
 
+/* Chrome, Safari and Opera */
 *::-webkit-scrollbar {
   display: none;
 }
