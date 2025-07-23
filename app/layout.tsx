@@ -38,15 +38,15 @@ export default function RootLayout({
         >
           <div className="flex flex-col min-h-screen">
             {/* Floating Header - Same Width as Editor */}
-            <div className="sticky top-0 z-50 mt-2 flex justify-center gap-2">
+            <div className="sticky top-0 z-50 p-2 flex justify-between">
               {/* <div> */}
-                <header className="flex h-10 items-center justify-between bg-secondary/50 backdrop-blur-md rounded-2xl border border-primary/10 shadow-sm w-3/4 p-1.5">
+                <header className="flex h-10 items-center justify-center bg-secondary/50 backdrop-blur-md rounded-2xl border border-primary/10 shadow-sm w-full max-w-[240px]">
                   <h1 className="text-lg font-semibold flex items-center gap-2 p-3">
                     <Image src="/icon.svg" alt="POVImage" width={20} height={20} />
                     POVImage
                   </h1>
                 </header>
-                <div className="w-32 h-10">
+                <div className="h-10 w-full max-w-[240px] mx-2">
                   <ThemeSwitch />
                 </div>
                 {/* </div> */}

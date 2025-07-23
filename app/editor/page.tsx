@@ -356,7 +356,7 @@ export default function EditorPage() {
                     <section className="flex flex-col w-full h-full items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border border-primary/10 overflow-hidden relative order-1 lg:order-2">
                             <canvas 
                                 ref={canvasRef} 
-                                className="w-full h-full max-h-[50vh] lg:max-h-[75vh] object-contain" 
+                                className="w-full h-full object-contain" 
                             />
                         {/* Floating Download Actions */}
                         <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-8 z-40 bg-white dark:bg-secondary/90 rounded-2xl shadow-lg border border-primary/10 px-2 py-1 gap-2 items-center" style={{minWidth:'320px'}}>
