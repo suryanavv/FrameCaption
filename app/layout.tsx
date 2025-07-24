@@ -1,19 +1,9 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
+import { onest } from "@/components/fonts";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSwitch } from "@/components/ui/themeSwitch";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "POVImage - Text Behind Image Editor",
@@ -28,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}
+        className={`${onest.variable} antialiased min-h-screen bg-background`}
       >
         <ThemeProvider
           attribute="class"

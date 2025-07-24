@@ -1,3 +1,4 @@
+// Onest is now the global app font
 import {
   Bricolage_Grotesque,
   Space_Mono,
@@ -15,6 +16,21 @@ import {
   Ms_Madi,
   Funnel_Sans,
   Funnel_Display,
+  // New fonts
+  Roboto,
+  Open_Sans,
+  Lato,
+  Merriweather,
+  Playfair_Display,
+  Rubik,
+  Nunito,
+  Oswald,
+  Raleway,
+  PT_Serif,
+  Cabin,
+  Quicksand,
+  Fira_Mono,
+  JetBrains_Mono,
 } from "next/font/google";
 
 // Sans-serif fonts
@@ -120,5 +136,80 @@ export const spaceMono = Space_Mono({
   weight: ["400", "700"],
   subsets: ["latin"],
   variable: "--font-space-mono",
+  display: 'swap',
+});
+
+// New font exports
+export const roboto = Roboto({
+  subsets: ["latin"],
+  variable: "--font-roboto",
+  display: 'swap',
+});
+export const openSans = Open_Sans({
+  subsets: ["latin"],
+  variable: "--font-open-sans",
+  display: 'swap',
+});
+export const lato = Lato({
+  weight: ["100", "300", "400", "700", "900"],
+  subsets: ["latin"],
+  variable: "--font-lato",
+  display: 'swap',
+});
+export const merriweather = Merriweather({
+  subsets: ["latin"],
+  variable: "--font-merriweather",
+  display: 'swap',
+});
+export const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair-display",
+  display: 'swap',
+});
+export const rubik = Rubik({
+  subsets: ["latin"],
+  variable: "--font-rubik",
+  display: 'swap',
+});
+export const nunito = Nunito({
+  subsets: ["latin"],
+  variable: "--font-nunito",
+  display: 'swap',
+});
+export const oswald = Oswald({
+  subsets: ["latin"],
+  variable: "--font-oswald",
+  display: 'swap',
+});
+export const raleway = Raleway({
+  subsets: ["latin"],
+  variable: "--font-raleway",
+  display: 'swap',
+});
+export const ptSerif = PT_Serif({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-pt-serif",
+  display: 'swap',
+});
+export const cabin = Cabin({
+  subsets: ["latin"],
+  variable: "--font-cabin",
+  display: 'swap',
+});
+export const quicksand = Quicksand({
+  subsets: ["latin"],
+  variable: "--font-quicksand",
+  display: 'swap',
+});
+export const firaMono = Fira_Mono({
+  weight: ["400", "500", "700"],
+  subsets: ["latin"],
+  variable: "--font-fira-mono",
+  display: 'swap',
+});
+export const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
   display: 'swap',
 });

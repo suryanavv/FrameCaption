@@ -17,7 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PositionControl } from "@/components/ui/position-control";
 import { Toaster } from "@/components/ui/sonner";
 import { Separator } from "@/components/ui/separator";
-import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono } from "@/components/fonts";
+import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono, roboto, openSans, lato, merriweather, playfairDisplay, rubik, nunito, oswald, raleway, ptSerif, cabin, quicksand, firaMono, jetbrainsMono } from "@/components/fonts";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
 import dynamic from 'next/dynamic';
@@ -52,11 +52,25 @@ const googleFonts = [
     { label: "Ms Madi", value: "Ms Madi", className: msMadi.variable },
     { label: "Geist Mono", value: "Geist Mono", className: geistMono.variable },
     { label: "Space Mono", value: "Space Mono", className: spaceMono.variable },
+    { label: "Roboto", value: "Roboto", className: roboto.variable },
+    { label: "Open Sans", value: "Open Sans", className: openSans.variable },
+    { label: "Lato", value: "Lato", className: lato.variable },
+    { label: "Merriweather", value: "Merriweather", className: merriweather.variable },
+    { label: "Playfair Display", value: "Playfair Display", className: playfairDisplay.variable },
+    { label: "Rubik", value: "Rubik", className: rubik.variable },
+    { label: "Nunito", value: "Nunito", className: nunito.variable },
+    { label: "Oswald", value: "Oswald", className: oswald.variable },
+    { label: "Raleway", value: "Raleway", className: raleway.variable },
+    { label: "PT Serif", value: "PT Serif", className: ptSerif.variable },
+    { label: "Cabin", value: "Cabin", className: cabin.variable },
+    { label: "Quicksand", value: "Quicksand", className: quicksand.variable },
+    { label: "Fira Mono", value: "Fira Mono", className: firaMono.variable },
+    { label: "JetBrains Mono", value: "JetBrains Mono", className: jetbrainsMono.variable },
 ];
 
-const getCenterPosition = (img?: HTMLImageElement) => ({
-    x: (img?.width ?? 1000) / 2,
-    y: (img?.height ?? 1000) / 2,
+const getQuarterPosition = (img?: HTMLImageElement) => ({
+    x: (img?.width ?? 1000) / 4,
+    y: (img?.height ?? 1000) / 4,
 });
 
 const defaultTextSettings: TextSettings = {
@@ -64,7 +78,7 @@ const defaultTextSettings: TextSettings = {
     fontSize: 50,
     color: '#000000',
     content: 'Your Text Here',
-    position: getCenterPosition(),
+    position: getQuarterPosition(),
     opacity: 1,
     letterSpacing: 0,
     lineHeight: 1.2,
@@ -72,6 +86,7 @@ const defaultTextSettings: TextSettings = {
 };
 
 // Helper to map between canvas and control coordinates
+// For 1:1 mapping, just pass through the position
 const toControlCoords = (pos: { x: number; y: number }, width: number, height: number) => ({
     x: pos.x - width / 2,
     y: pos.y - height / 2,
@@ -95,6 +110,7 @@ export default function EditorPage() {
     const [activeTab, setActiveTab] = useState<"text" | "image">("text");
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isMobile, setIsMobile] = useState(false);
+    const [loading, setLoading] = useState(false);
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 1024);
         check();
@@ -111,17 +127,21 @@ export default function EditorPage() {
             img.src = URL.createObjectURL(file);
             img.onload = async () => {
                 setOriginalImage(img);
-                // Center the active text on image load
                 setTexts((prev) => {
                     const newTexts = [...prev];
                     newTexts[activeTextIndex] = {
                         ...newTexts[activeTextIndex],
-                        position: getCenterPosition(img),
+                        position: getQuarterPosition(img),
                     };
                     return newTexts;
                 });
-                const fg = await removeImageBackground(img);
-                setForegroundImage(fg);
+                setLoading(true);
+                try {
+                    const fg = await removeImageBackground(img);
+                    setForegroundImage(fg);
+                } finally {
+                    setLoading(false);
+                }
             };
         }
     };
@@ -163,13 +183,13 @@ export default function EditorPage() {
     // Update handlePositionChange to map from control to canvas coordinates
     const handlePositionChange = (pos: { x: number; y: number }) => {
         const newTexts = [...texts];
-        newTexts[activeTextIndex].position = toCanvasCoords(pos, maxX, maxY);
+        newTexts[activeTextIndex].position = toCanvasCoords(pos, resolution.width, resolution.height);
         setTexts(newTexts);
     };
 
     const addText = () => {
-        const center = getCenterPosition(originalImage ?? undefined);
-        setTexts([...texts, { ...defaultTextSettings, content: `New Text ${texts.length + 1}`, position: center }]);
+        const quarter = getQuarterPosition(originalImage ?? undefined);
+        setTexts([...texts, { ...defaultTextSettings, content: `New Text ${texts.length + 1}`, position: quarter }]);
         setActiveTextIndex(texts.length);
     };
 
@@ -197,9 +217,9 @@ export default function EditorPage() {
     };
 
     const resetTextEdits = () => {
-        const center = getCenterPosition(originalImage ?? undefined);
+        const quarter = getQuarterPosition(originalImage ?? undefined);
         const newTexts = [...texts];
-        newTexts[activeTextIndex] = { ...defaultTextSettings, position: center };
+        newTexts[activeTextIndex] = { ...defaultTextSettings, position: quarter };
         setTexts(newTexts);
     };
 
@@ -207,12 +227,13 @@ export default function EditorPage() {
         setImage(null);
         setOriginalImage(null);
         setForegroundImage(null);
-        setTexts([{ ...defaultTextSettings, position: getCenterPosition() }]);
+        setTexts([{ ...defaultTextSettings, position: getQuarterPosition() }]);
         setActiveTextIndex(0);
         resetImageEdits();
     };
 
     const activeText = texts[activeTextIndex];
+    const resolution = originalImage ? { width: originalImage.width, height: originalImage.height } : { width: 1000, height: 1000 };
     const maxX = originalImage ? originalImage.width : 1000;
     const maxY = originalImage ? originalImage.height : 1000;
 
@@ -256,6 +277,8 @@ export default function EditorPage() {
                 maxX={maxX}
                 maxY={maxY}
                 PositionControl={PositionControl}
+                loading={loading}
+                setLoading={setLoading}
             />
         );
     }
@@ -390,8 +413,8 @@ export default function EditorPage() {
                                             label="Size"
                                             value={[activeText.fontSize]}
                                             onValueChange={([val]) => handleTextChange('fontSize', val)}
-                                            max={200}
-                                            step={1}
+                                            max={1000}
+                                            step={10}
                                         />
                                         <Slider
                                             label="Opacity"
@@ -501,6 +524,12 @@ export default function EditorPage() {
                     </div>
                 ) : (
                     <section className="flex flex-col w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-full items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border border-primary/10 overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
+                        {loading && (
+                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+                                <span className="text-lg font-semibold text-white animate-pulse">Processing image...</span>
+                                <span className="text-xs text-white/80 mt-2">This may take up to 15 seconds</span>
+                            </div>
+                        )}
                         <div className="w-full h-full overflow-auto flex items-center justify-center">
                             <canvas
                                 ref={canvasRef}
@@ -539,10 +568,10 @@ export default function EditorPage() {
                     </div>
                     <div className="flex flex-col gap-2 w-full bg-secondary rounded-2xl p-4 border border-primary/10">
                         <PositionControl
-                            value={toControlCoords(activeText.position, maxX, maxY)}
-                            onChange={handlePositionChange}
-                            width={maxX}
-                            height={maxY}
+                            value={toControlCoords(activeText.position, resolution.width, resolution.height)}
+                            onChange={pos => handlePositionChange(pos)}
+                            width={resolution.width}
+                            height={resolution.height}
                             className="max-w-[140px] max-h-[140px]"
                         />
                     </div>

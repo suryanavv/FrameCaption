@@ -7,16 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, Move, X } from 'lucide-react';
+import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, Move, X, Sun, Moon, MonitorSmartphone } from 'lucide-react';
 import { removeImageBackground } from '@/lib/backgroundRemoval';
 import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { Separator } from "@/components/ui/separator";
-import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono } from "@/components/fonts";
+import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono, roboto, openSans, lato, merriweather, playfairDisplay, rubik, nunito, oswald, raleway, ptSerif, cabin, quicksand, firaMono, jetbrainsMono } from "@/components/fonts";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
+import VaulDrawer from "@/components/ui/drawer";
+import { useTheme } from "next-themes";
 
+// Onest is now the global app font
 const googleFonts = [
     { label: "Poppins", value: "Poppins", className: poppins.variable },
     { label: "Inter", value: "Inter", className: inter.variable },
@@ -34,6 +37,20 @@ const googleFonts = [
     { label: "Ms Madi", value: "Ms Madi", className: msMadi.variable },
     { label: "Geist Mono", value: "Geist Mono", className: geistMono.variable },
     { label: "Space Mono", value: "Space Mono", className: spaceMono.variable },
+    { label: "Roboto", value: "Roboto", className: roboto.variable },
+    { label: "Open Sans", value: "Open Sans", className: openSans.variable },
+    { label: "Lato", value: "Lato", className: lato.variable },
+    { label: "Merriweather", value: "Merriweather", className: merriweather.variable },
+    { label: "Playfair Display", value: "Playfair Display", className: playfairDisplay.variable },
+    { label: "Rubik", value: "Rubik", className: rubik.variable },
+    { label: "Nunito", value: "Nunito", className: nunito.variable },
+    { label: "Oswald", value: "Oswald", className: oswald.variable },
+    { label: "Raleway", value: "Raleway", className: raleway.variable },
+    { label: "PT Serif", value: "PT Serif", className: ptSerif.variable },
+    { label: "Cabin", value: "Cabin", className: cabin.variable },
+    { label: "Quicksand", value: "Quicksand", className: quicksand.variable },
+    { label: "Fira Mono", value: "Fira Mono", className: firaMono.variable },
+    { label: "JetBrains Mono", value: "JetBrains Mono", className: jetbrainsMono.variable },
 ];
 
 const getCenterPosition = (img?: HTMLImageElement) => ({
@@ -41,12 +58,17 @@ const getCenterPosition = (img?: HTMLImageElement) => ({
     y: (img?.height ?? 1000) / 2,
 });
 
+const getQuarterPosition = (img?: HTMLImageElement) => ({
+    x: (img?.width ?? 1000) / 4,
+    y: (img?.height ?? 1000) / 4,
+});
+
 const defaultTextSettings: TextSettings = {
     font: 'Poppins',
     fontSize: 50,
     color: '#000000',
     content: 'Your Text Here',
-    position: getCenterPosition(),
+    position: getQuarterPosition(),
     opacity: 1,
     letterSpacing: 0,
     lineHeight: 1.2,
@@ -54,6 +76,7 @@ const defaultTextSettings: TextSettings = {
 };
 
 // Helper to map between canvas and control coordinates
+// For 1:1 mapping, just pass through the position
 const toControlCoords = (pos: { x: number; y: number }, width: number, height: number) => ({
     x: pos.x - width / 2,
     y: pos.y - height / 2,
@@ -105,6 +128,8 @@ interface MobileEditorProps {
         height: number;
         className?: string;
     }>;
+    loading: boolean;
+    setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function MobileEditor(props: MobileEditorProps) {
@@ -115,10 +140,13 @@ export default function MobileEditor(props: MobileEditorProps) {
         bgContrast, setBgContrast, fgBrightness, setFgBrightness, fgContrast, setFgContrast,
         activeTab, setActiveTab, canvasRef, handleImageUpload, drawCanvas, handleTextChange,
         handlePositionChange, addText, deleteText, downloadImage, resetImageEdits, resetTextEdits,
-        tryAnotherImage, activeText, maxX, maxY, PositionControl
+        tryAnotherImage, activeText, maxX, maxY, PositionControl, loading, setLoading
     } = props;
 
     const [positionDrawerOpen, setPositionDrawerOpen] = useState(false);
+    const [themeDrawerOpen, setThemeDrawerOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+    const { theme } = useTheme();
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         document.documentElement.style.overflow = 'hidden';
@@ -132,19 +160,60 @@ export default function MobileEditor(props: MobileEditorProps) {
         drawCanvas();
     }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast]);
 
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 1024);
+        check();
+        window.addEventListener('resize', check);
+        return () => window.removeEventListener('resize', check);
+    }, []);
+
+    const resolution = originalImage ? { width: originalImage.width, height: originalImage.height } : { width: 1000, height: 1000 };
+
     return (
         <div className="w-full h-screen bg-background overflow-hidden flex flex-col">
             {/* Sticky Header with gap and rounded corners */}
             <div className="p-2">
-                <header className="sticky top-0 mt-2 z-30 flex h-10 items-center justify-center bg-secondary/80 backdrop-blur-md rounded-2xl overflow-hidden border-b border-primary/10 w-full max-w-full mx-auto">
+                <header className="sticky top-0 mt-2 z-30 flex h-10 items-center justify-center bg-secondary/50 backdrop-blur-md rounded-2xl overflow-hidden border-b border-primary/10 w-full max-w-full mx-auto relative">
                     <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                         <Image src="/icon.svg" alt="POVImage" width={20} height={20} />
                         POVImage
                     </h1>
+                    {isMobile && (
+                        <button
+                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-primary/10 transition-colors"
+                            aria-label="Theme Control"
+                            onClick={() => setThemeDrawerOpen(true)}
+                        >
+                            {theme === 'system' && <MonitorSmartphone className="w-5 h-5 text-primary" />}
+                            {theme === 'light' && <Sun className="w-5 h-5 text-primary" />}
+                            {theme === 'dark' && <Moon className="w-5 h-5 text-primary" />}
+                        </button>
+                    )}
                 </header>
             </div>
+            {/* Simple Theme Modal for mobile */}
+            {isMobile && themeDrawerOpen && (
+                <>
+                    {/* Overlay */}
+                    <div
+                        className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-sm transition-opacity animate-fade-in"
+                        onClick={() => setThemeDrawerOpen(false)}
+                        aria-label="Close theme modal"
+                    />
+                    {/* Centered Modal */}
+                    <div
+                        className="fixed left-1/2 top-1/2 z-[1001] -translate-x-1/2 -translate-y-1/2 bg-background/95 rounded-2xl shadow-2xl border border-primary/10 p-6 w-full max-w-sm flex flex-col items-center justify-center animate-fade-in"
+                        role="dialog"
+                        aria-modal="true"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <h2 className="text-base font-semibold mb-4 text-center text-foreground/80">Change Theme</h2>
+                        <ThemeSwitch className="w-full max-w-[220px] mx-auto" />
+                    </div>
+                </>
+            )}
             {/* Sticky Canvas Area below header */}
-            <div className="sticky top-[3.25rem] px-2 z-20 mb-2" style={{ height: '32vh' }}>
+            <div className="sticky top-[3.25rem] px-2 z-20 mb-2 min-h-[350px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[350px] h-[32vh] max-h-[400px] sm:max-h-[500px] md:max-h-[600px] lg:max-h-[700px]">
                 {!image ? (
                     <div className="flex flex-col w-full h-full mx-auto items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border-b border-primary/10 overflow-hidden relative">
                         <Upload className="w-12 h-12 md:w-16 md:h-16 text-primary mb-4 md:mb-6" />
@@ -158,6 +227,12 @@ export default function MobileEditor(props: MobileEditorProps) {
                     </div>
                 ) : (
                     <section className="flex flex-col w-full h-full items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border-b border-primary/10 overflow-hidden relative">
+                        {loading && (
+                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
+                                <span className="text-lg font-semibold text-white animate-pulse">Processing image...</span>
+                                <span className="text-xs text-white/80 mt-2">This may take up to 15 seconds</span>
+                            </div>
+                        )}
                         <div className="w-full h-full overflow-auto flex items-center justify-center">
                             <canvas
                                 ref={canvasRef}
@@ -278,8 +353,8 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 label="Size"
                                                 value={[activeText.fontSize]}
                                                 onValueChange={([val]) => handleTextChange('fontSize', val)}
-                                                max={200}
-                                                step={1}
+                                                max={1000}
+                                                step={10}
                                             />
                                             <Slider
                                                 label="Opacity"
@@ -398,10 +473,10 @@ export default function MobileEditor(props: MobileEditorProps) {
                             <div className="w-12 h-1 rounded-full bg-white shadow-md mb-2" />
                         </div>
                         <PositionControl
-                            value={toControlCoords(activeText.position, maxX, maxY)}
-                            onChange={handlePositionChange}
-                            width={maxX}
-                            height={maxY}
+                            value={toControlCoords(activeText.position, resolution.width, resolution.height)}
+                            onChange={pos => handlePositionChange(pos)}
+                            width={resolution.width}
+                            height={resolution.height}
                             className="max-w-[260px] max-h-[200px]"
                         />
                     </div>

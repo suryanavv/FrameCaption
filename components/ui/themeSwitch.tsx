@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-import { Monitor, Moon, Sun } from "lucide-react";
+import { MonitorSmartphone, Moon, Sun } from "lucide-react";
 import { motion } from "motion/react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 const themes = [
   {
     key: "system",
-    icon: Monitor,
+    icon: MonitorSmartphone,
     label: "System theme",
   },
   {
