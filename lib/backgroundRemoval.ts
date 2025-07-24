@@ -1,6 +1,6 @@
 import { removeBackground } from '@imgly/background-removal';
 
-export async function removeImageBackground(image: HTMLImageElement, options?: any): Promise<HTMLCanvasElement> {
+export async function removeImageBackground(image: HTMLImageElement, options?: Record<string, unknown>): Promise<HTMLCanvasElement> {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas not supported');

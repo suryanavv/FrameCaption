@@ -174,7 +174,7 @@ export default function EditorPage() {
         drawCanvas();
     }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast]);
 
-    const handleTextChange = (key: keyof TextSettings, value: any) => {
+    const handleTextChange = (key: keyof TextSettings, value: TextSettings[keyof TextSettings]) => {
         const newTexts = [...texts];
         newTexts[activeTextIndex] = { ...newTexts[activeTextIndex], [key]: value };
         setTexts(newTexts);

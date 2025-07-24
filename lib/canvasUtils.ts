@@ -1,1 +1,2 @@
-export { addTextToCanvas, TextSettings } from './textRendering';
+export { addTextToCanvas } from './textRendering';
+export type { TextSettings } from './textRendering';

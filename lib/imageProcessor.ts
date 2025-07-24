@@ -6,7 +6,7 @@ interface TextBehindImageProps {
     textSettings?: TextSettings | TextSettings[];
     format: 'png' | 'jpg' | 'webp';
     outputType?: 'dataUrl' | 'blob' | 'file';
-    bgRemovalOptions?: any; // passthrough for future background removal options
+    bgRemovalOptions?: Record<string, unknown>; // passthrough for future background removal options
 }
 
 const defaultTextSettings: TextSettings = {
@@ -19,14 +19,8 @@ const defaultTextSettings: TextSettings = {
 
 async function TextBehindImage(props: TextBehindImageProps): Promise<string | Blob | File> {
   const { image, textSettings = defaultTextSettings, format, outputType = 'dataUrl', bgRemovalOptions } = props;
-  let img: HTMLImageElement;
-  let src: string;
-  if (typeof image === 'string') {
-    src = image;
-  } else {
-    src = URL.createObjectURL(image);
-  }
-  img = new Image();
+  const src = typeof image === 'string' ? image : URL.createObjectURL(image);
+  const img = new Image();
   img.crossOrigin = 'anonymous';
   img.src = src;
   await new Promise((resolve) => { img.onload = resolve; });
@@ -58,4 +52,5 @@ async function TextBehindImage(props: TextBehindImageProps): Promise<string | Bl
   return canvas.toDataURL(`image/${format}`);
 }
 
-export { TextBehindImage, TextBehindImageProps };
+export { TextBehindImage };
+export type { TextBehindImageProps };

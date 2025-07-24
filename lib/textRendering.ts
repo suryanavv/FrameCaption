@@ -42,7 +42,7 @@ export interface TextSettings {
       // Letter spacing and line height
       const lines = content.split('\n');
       for (let i = 0; i < lines.length; i++) {
-        let x = 0, y = i * fontSize * lineHeight;
+        const x = 0, y = i * fontSize * lineHeight;
         if (letterSpacing) {
           let currentX = x;
           for (const char of lines[i]) {

@@ -110,7 +110,7 @@ interface MobileEditorProps {
     canvasRef: React.RefObject<HTMLCanvasElement>;
     handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
     drawCanvas: () => void;
-    handleTextChange: (key: keyof TextSettings, value: any) => void;
+    handleTextChange: (key: keyof TextSettings, value: TextSettings[keyof TextSettings]) => void;
     handlePositionChange: (pos: { x: number; y: number }) => void;
     addText: () => void;
     deleteText: (index: number) => void;
