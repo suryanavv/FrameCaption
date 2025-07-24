@@ -20,6 +20,20 @@ import { Separator } from "@/components/ui/separator";
 import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono } from "@/components/fonts";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
+import dynamic from 'next/dynamic';
+
+const MobileEditor = dynamic(() => import('./MobileEditor'), { ssr: false });
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+  return isMobile;
+}
 
 const googleFonts = [
     { label: "Poppins", value: "Poppins", className: poppins.variable },
@@ -68,6 +82,7 @@ const toCanvasCoords = (pos: { x: number; y: number }, width: number, height: nu
 });
 
 export default function EditorPage() {
+    // Always call all hooks
     const [image, setImage] = useState<File | null>(null);
     const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
     const [foregroundImage, setForegroundImage] = useState<HTMLCanvasElement | null>(null);
@@ -79,6 +94,13 @@ export default function EditorPage() {
     const [fgContrast, setFgContrast] = useState(100);
     const [activeTab, setActiveTab] = useState<"text" | "image">("text");
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [isMobile, setIsMobile] = useState(false);
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 1024);
+        check();
+        window.addEventListener('resize', check);
+        return () => window.removeEventListener('resize', check);
+    }, []);
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -194,32 +216,82 @@ export default function EditorPage() {
     const maxX = originalImage ? originalImage.width : 1000;
     const maxY = originalImage ? originalImage.height : 1000;
 
+    // Only branch on rendering, not on hooks
+    if (isMobile) {
+        return (
+            <MobileEditor
+                image={image}
+                setImage={setImage}
+                originalImage={originalImage}
+                setOriginalImage={setOriginalImage}
+                foregroundImage={foregroundImage}
+                setForegroundImage={setForegroundImage}
+                texts={texts}
+                setTexts={setTexts}
+                activeTextIndex={activeTextIndex}
+                setActiveTextIndex={setActiveTextIndex}
+                bgBrightness={bgBrightness}
+                setBgBrightness={setBgBrightness}
+                bgContrast={bgContrast}
+                setBgContrast={setBgContrast}
+                fgBrightness={fgBrightness}
+                setFgBrightness={setFgBrightness}
+                fgContrast={fgContrast}
+                setFgContrast={setFgContrast}
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                canvasRef={canvasRef as React.RefObject<HTMLCanvasElement>}
+                // pass all handlers as props
+                handleImageUpload={handleImageUpload}
+                drawCanvas={drawCanvas}
+                handleTextChange={handleTextChange}
+                handlePositionChange={handlePositionChange}
+                addText={addText}
+                deleteText={deleteText}
+                downloadImage={downloadImage}
+                resetImageEdits={resetImageEdits}
+                resetTextEdits={resetTextEdits}
+                tryAnotherImage={tryAnotherImage}
+                activeText={activeText}
+                maxX={maxX}
+                maxY={maxY}
+                PositionControl={PositionControl}
+            />
+        );
+    }
+
     return (
-        <div className="flex flex-col lg:flex-row p-1.5  w-full h-screen overflow-hidden">
-
+        <div className="flex flex-col lg:flex-row p-1.5 w-full h-screen max-h-screen overflow-hidden">
+            {/* Mobile Top Header */}
+            <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-secondary/80 backdrop-blur-md rounded-xl border border-primary/10 w-full max-w-full sm:max-w-[320px] lg:max-w-[240px] mx-auto mb-2 lg:hidden">
+                <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
+                    <Image src="/icon.svg" alt="POVImage" width={20} height={20} />
+                    POVImage
+                </h1>
+            </header>
             {/* Responsive Layout with Image */}
-            <div className="flex flex-row gap-1.5 w-full">
+            <div className="flex flex-col lg:flex-row gap-1.5 w-full h-full">
                 {/* Left Sidebar - Controls */}
-                <aside className="flex flex-col gap-1 w-full lg:max-w-[205px] h-full overflow-hidden order-2 lg:order-1">
-
-                    <header className="flex h-10 items-center justify-center bg-secondary backdrop-blur-md rounded-xl border border-primary/10 w-full max-w-[240px]">
+                <aside className="flex flex-col gap-1 w-full max-w-full sm:max-w-[320px] lg:max-w-[205px] h-auto lg:h-full overflow-visible lg:overflow-hidden order-2 lg:order-1 mb-2 lg:mb-0">
+                    {/* Desktop Sidebar Header */}
+                    <header className="hidden lg:flex h-10 items-center justify-center bg-secondary backdrop-blur-md rounded-xl border border-primary/10 w-full max-w-full sm:max-w-[320px] lg:max-w-[240px] mx-auto">
                         <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                             <Image src="/icon.svg" alt="POVImage" width={20} height={20} />
                             POVImage
                         </h1>
                     </header>
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "text" | "image")} className="flex flex-col items-center w-full">
-                        <TabsList className="w-full flex items-center gap-1 h-10">
+                        <TabsList className="w-full flex items-center gap-1 h-8 lg:h-10">
                             <TabsTrigger
                                 value="text"
-                                className="flex-1 text-xs border border-primary/20 p-2 items-center justify-center gap-0.5"
+                                className="flex-1 text-xs border border-primary/20 p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0"
                             >
                                 <Type className="w-2.5 h-2.5" />
                                 <span className="text-[0.625rem]">Text</span>
                             </TabsTrigger>
                             <TabsTrigger
                                 value="image"
-                                className="flex-1 text-xs border border-primary/20 p-2 items-center justify-center gap-0.5"
+                                className="flex-1 text-xs border border-primary/20 p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0"
                             >
                                 <ImageIcon className="w-2.5 h-2.5" />
                                 <span className="text-[0.625rem]">Image</span>
@@ -227,10 +299,10 @@ export default function EditorPage() {
                         </TabsList>
                     </Tabs>
 
-                    <section className="w-full bg-secondary/50 backdrop-blur-sm rounded-2xl flex flex-col overflow-hidden h-full border border-primary/10">
-                        <div className="flex flex-col overflow-y-auto no-scrollbar h-full p-3">
+                    <section className="w-full bg-secondary/50 backdrop-blur-sm rounded-2xl flex flex-col flex-grow min-h-0 overflow-visible lg:overflow-hidden h-auto lg:h-full border border-primary/10">
+                        <div className="flex flex-col flex-grow min-h-0 overflow-y-auto no-scrollbar h-auto max-h-[60vh] lg:max-h-full p-3">
                             {activeTab === "text" && (
-                                <div className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-4 pb-14 sm:pb-0"> {/* Add bottom padding for sticky button */}
                                     {/* Text Layers */}
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
@@ -402,56 +474,66 @@ export default function EditorPage() {
                                 </div>
                             )}
                         </div>
+                        {/* Sticky Reset Button for Text Tab on Mobile */}
+                        {activeTab === "text" && (
+                            <div className="lg:hidden sticky bottom-0 left-0 w-full bg-secondary/90 p-2 z-20 rounded-b-2xl border-t border-primary/10 flex">
+                                <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-8 text-xs">
+                                    <RefreshCw className="w-3 h-3 mr-1" />
+                                    Reset
+                                </Button>
+                            </div>
+                        )}
                     </section>
                 </aside>
 
                 {/* Main Canvas Area - Full Width */}
                 {!image ? (
                     /* Full Page Upload Section */
-                    <div className="flex flex-col h-full w-full mx-auto items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border border-primary/10 overflow-hidden relative order-1 lg:order-2">
+                    <div className="flex flex-col h-[300px] sm:h-[400px] md:h-[500px] lg:h-full w-full mx-auto items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border border-primary/10 overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
                         <Upload className="w-12 h-12 md:w-16 md:h-16 text-primary mb-4 md:mb-6" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
                         <p className="text-muted-foreground mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
-                        <Button onClick={() => document.getElementById('image-upload')?.click()} className="h-8 w-auto text-xs flex items-center gap-2">
+                        <Button onClick={() => document.getElementById('image-upload')?.click()} className="h-10 w-auto text-xs flex items-center gap-2">
                             <Upload className="w-4 h-4" />
                             Upload Image
                         </Button>
                         <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     </div>
-                ) : (<section className="flex flex-col w-full h-full items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border border-primary/10 overflow-hidden relative order-1 lg:order-2">
-                    <div className="w-full h-full overflow-hidden flex items-center justify-center">
-                        <canvas
-                            ref={canvasRef}
-                            className="max-w-full max-h-full object-contain"
-                        />
-                    </div>
-                    {/* Floating Download Actions */}
-                    <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-8 z-40 bg-white dark:bg-secondary/90 rounded-2xl shadow-lg border border-primary/10 px-2 py-1 gap-2 items-center" style={{ minWidth: '320px' }}>
-                        <Button onClick={downloadImage} className="h-9 text-xs flex items-center gap-2">
-                            <Download className="w-4 h-4" />
-                            Download
-                        </Button>
-                        <Button variant="outline" onClick={tryAnotherImage} className="h-9 flex items-center gap-2 text-xs">
-                            <ImageIcon className="w-4 h-4" />
-                            Try Another
-                        </Button>
-                    </div>
-                    {/* Mobile/Tablet Download Actions */}
-                    <div className="flex lg:hidden w-full justify-center p-2 gap-2">
-                        <Button onClick={downloadImage} className="h-9 text-xs flex-1 flex items-center gap-2">
-                            <Download className="w-4 h-4" />
-                            Download
-                        </Button>
-                        <Button variant="outline" onClick={tryAnotherImage} className="h-9 text-xs flex-1 flex items-center gap-2">
-                            <ImageIcon className="w-4 h-4" />
-                            Try Another
-                        </Button>
-                    </div>
-                </section>
+                ) : (
+                    <section className="flex flex-col w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-full items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border border-primary/10 overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
+                        <div className="w-full h-full overflow-auto flex items-center justify-center">
+                            <canvas
+                                ref={canvasRef}
+                                className="max-w-full max-h-full object-contain"
+                            />
+                        </div>
+                        {/* Floating Download Actions */}
+                        <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-8 z-40 bg-white dark:bg-secondary/90 rounded-2xl shadow-lg border border-primary/10 px-2 py-1 gap-2 items-center" style={{ minWidth: '320px' }}>
+                            <Button onClick={downloadImage} className="h-9 text-xs flex items-center gap-2">
+                                <Download className="w-4 h-4" />
+                                Download
+                            </Button>
+                            <Button variant="outline" onClick={tryAnotherImage} className="h-9 flex items-center gap-2 text-xs">
+                                <ImageIcon className="w-4 h-4" />
+                                Try Another
+                            </Button>
+                        </div>
+                        {/* Mobile/Tablet Download Actions */}
+                        <div className="flex lg:hidden w-full justify-center p-2 gap-2">
+                            <Button onClick={downloadImage} className="h-9 text-xs flex-1 flex items-center gap-2">
+                                <Download className="w-4 h-4" />
+                                Download
+                            </Button>
+                            <Button variant="outline" onClick={tryAnotherImage} className="h-9 text-xs flex-1 flex items-center gap-2">
+                                <ImageIcon className="w-4 h-4" />
+                                Try Another
+                            </Button>
+                        </div>
+                    </section>
                 )}
 
                 {/* Right Sidebar - Position Control (Desktop only) */}
-                <aside className="flex flex-col gap-2 w-full lg:max-w-[205px] h-full overflow-hidden order-3">
+                <aside className="hidden lg:flex flex-col gap-2 w-full max-w-full lg:max-w-[205px] h-auto lg:h-full overflow-visible lg:overflow-hidden order-3">
                     <div className="h-10 w-full">
                         <ThemeSwitch />
                     </div>

@@ -1,0 +1,413 @@
+import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
+import { ThemeSwitch } from "@/components/ui/themeSwitch";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, Move, X } from 'lucide-react';
+import { removeImageBackground } from '@/lib/backgroundRemoval';
+import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Toaster } from "@/components/ui/sonner";
+import { Separator } from "@/components/ui/separator";
+import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono } from "@/components/fonts";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { HexColorPicker } from "react-colorful";
+
+const googleFonts = [
+    { label: "Poppins", value: "Poppins", className: poppins.variable },
+    { label: "Inter", value: "Inter", className: inter.variable },
+    { label: "Manrope", value: "Manrope", className: manrope.variable },
+    { label: "Montserrat", value: "Montserrat", className: montserrat.variable },
+    { label: "Geist", value: "Geist", className: geist.variable },
+    { label: "Bricolage Grotesque", value: "Bricolage Grotesque", className: bricolage.variable },
+    { label: "Funnel Sans", value: "Funnel Sans", className: funnelSans.variable },
+    { label: "Funnel Display", value: "Funnel Display", className: funnelDisplay.variable },
+    { label: "Onest", value: "Onest", className: onest.variable },
+    { label: "Space Grotesk", value: "Space Grotesk", className: spaceGrotesk.variable },
+    { label: "DM Serif Display", value: "DM Serif Display", className: dmSerifDisplay.variable },
+    { label: "Instrument Serif", value: "Instrument Serif", className: instrumentSerif.variable },
+    { label: "Lora", value: "Lora", className: lora.variable },
+    { label: "Ms Madi", value: "Ms Madi", className: msMadi.variable },
+    { label: "Geist Mono", value: "Geist Mono", className: geistMono.variable },
+    { label: "Space Mono", value: "Space Mono", className: spaceMono.variable },
+];
+
+const getCenterPosition = (img?: HTMLImageElement) => ({
+    x: (img?.width ?? 1000) / 2,
+    y: (img?.height ?? 1000) / 2,
+});
+
+const defaultTextSettings: TextSettings = {
+    font: 'Poppins',
+    fontSize: 50,
+    color: '#000000',
+    content: 'Your Text Here',
+    position: getCenterPosition(),
+    opacity: 1,
+    letterSpacing: 0,
+    lineHeight: 1.2,
+    alignment: 'start'
+};
+
+// Helper to map between canvas and control coordinates
+const toControlCoords = (pos: { x: number; y: number }, width: number, height: number) => ({
+    x: pos.x - width / 2,
+    y: pos.y - height / 2,
+});
+const toCanvasCoords = (pos: { x: number; y: number }, width: number, height: number) => ({
+    x: pos.x + width / 2,
+    y: pos.y + height / 2,
+});
+
+interface MobileEditorProps {
+    image: File | null;
+    setImage: React.Dispatch<React.SetStateAction<File | null>>;
+    originalImage: HTMLImageElement | null;
+    setOriginalImage: React.Dispatch<React.SetStateAction<HTMLImageElement | null>>;
+    foregroundImage: HTMLCanvasElement | null;
+    setForegroundImage: React.Dispatch<React.SetStateAction<HTMLCanvasElement | null>>;
+    texts: TextSettings[];
+    setTexts: React.Dispatch<React.SetStateAction<TextSettings[]>>;
+    activeTextIndex: number;
+    setActiveTextIndex: React.Dispatch<React.SetStateAction<number>>;
+    bgBrightness: number;
+    setBgBrightness: React.Dispatch<React.SetStateAction<number>>;
+    bgContrast: number;
+    setBgContrast: React.Dispatch<React.SetStateAction<number>>;
+    fgBrightness: number;
+    setFgBrightness: React.Dispatch<React.SetStateAction<number>>;
+    fgContrast: number;
+    setFgContrast: React.Dispatch<React.SetStateAction<number>>;
+    activeTab: "text" | "image";
+    setActiveTab: React.Dispatch<React.SetStateAction<"text" | "image">>;
+    canvasRef: React.RefObject<HTMLCanvasElement>;
+    handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    drawCanvas: () => void;
+    handleTextChange: (key: keyof TextSettings, value: any) => void;
+    handlePositionChange: (pos: { x: number; y: number }) => void;
+    addText: () => void;
+    deleteText: (index: number) => void;
+    downloadImage: () => void;
+    resetImageEdits: () => void;
+    resetTextEdits: () => void;
+    tryAnotherImage: () => void;
+    activeText: TextSettings;
+    maxX: number;
+    maxY: number;
+    PositionControl: React.ComponentType<{
+        value: { x: number; y: number };
+        onChange: (pos: { x: number; y: number }) => void;
+        width: number;
+        height: number;
+        className?: string;
+    }>;
+}
+
+export default function MobileEditor(props: MobileEditorProps) {
+    // Use props instead of local state/handlers
+    const {
+        image, setImage, originalImage, setOriginalImage, foregroundImage, setForegroundImage,
+        texts, setTexts, activeTextIndex, setActiveTextIndex, bgBrightness, setBgBrightness,
+        bgContrast, setBgContrast, fgBrightness, setFgBrightness, fgContrast, setFgContrast,
+        activeTab, setActiveTab, canvasRef, handleImageUpload, drawCanvas, handleTextChange,
+        handlePositionChange, addText, deleteText, downloadImage, resetImageEdits, resetTextEdits,
+        tryAnotherImage, activeText, maxX, maxY, PositionControl
+    } = props;
+
+    const [positionDrawerOpen, setPositionDrawerOpen] = useState(false);
+    useEffect(() => {
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        };
+    }, []);
+
+    useEffect(() => {
+        drawCanvas();
+    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast]);
+
+    return (
+        <div className="w-full h-screen bg-background overflow-hidden flex flex-col">
+            {/* Sticky Header with gap and rounded corners */}
+            <div className="p-2">
+                <header className="sticky top-0 mt-2 z-30 flex h-10 items-center justify-center bg-secondary/80 backdrop-blur-md rounded-2xl overflow-hidden border-b border-primary/10 w-full max-w-full mx-auto">
+                    <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
+                        <Image src="/icon.svg" alt="POVImage" width={20} height={20} />
+                        POVImage
+                    </h1>
+                </header>
+            </div>
+            {/* Sticky Canvas Area below header */}
+            <div className="sticky top-[3.25rem] px-2 z-20 mb-2" style={{ height: '32vh' }}>
+                {!image ? (
+                    <div className="flex flex-col w-full h-full mx-auto items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border-b border-primary/10 overflow-hidden relative">
+                        <Upload className="w-12 h-12 md:w-16 md:h-16 text-primary mb-4 md:mb-6" />
+                        <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
+                        <p className="text-muted-foreground mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
+                        <Button onClick={() => document.getElementById('image-upload')?.click()} className="h-10 w-auto text-xs flex items-center gap-2">
+                            <Upload className="w-4 h-4" />
+                            Upload Image
+                        </Button>
+                        <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                    </div>
+                ) : (
+                    <section className="flex flex-col w-full h-full items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border-b border-primary/10 overflow-hidden relative">
+                        <div className="w-full h-full overflow-auto flex items-center justify-center">
+                            <canvas
+                                ref={canvasRef}
+                                className="max-w-full max-h-full object-contain"
+                            />
+                        </div>
+                        {/* Mobile/Tablet Download Actions + Move Button */}
+                        <div className="flex w-full justify-center p-2 gap-2 relative">
+                            <Button onClick={downloadImage} className="h-9 text-xs flex-1 flex items-center gap-2">
+                                <Download className="w-4 h-4" />
+                                Download
+                            </Button>
+                            <Button variant="outline" onClick={tryAnotherImage} className="h-9 text-xs flex-1 flex items-center gap-2">
+                                <ImageIcon className="w-4 h-4" />
+                                Try Another
+                            </Button>
+                            {/* Move/PositionControl Drawer Button */}
+                            <Button variant="outline" className="h-9 w-9 p-0 flex items-center justify-center" onClick={() => setPositionDrawerOpen(true)}>
+                                <Move className="w-5 h-5" />
+                            </Button>
+                        </div>
+                    </section>
+                )}
+            </div>
+            {/* Sticky Tabs Content section (scrollable within) */}
+            <div className="flex-1 min-h-0 flex flex-col w-full px-2 pb-14 sticky top-[calc(3.25rem+32vh)] z-10">
+                <aside className="flex flex-col gap-1 w-full max-w-full h-full overflow-hidden mb-2">
+                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'text' | 'image')} className="flex flex-col items-center w-full h-full">
+                        {/* Tabs Content first */}
+                        <section className="w-full bg-secondary/50 backdrop-blur-sm rounded-2xl flex flex-col min-h-0 overflow-hidden h-full border border-primary/10">
+                            <div className="flex flex-col min-h-0 overflow-y-auto no-scrollbar h-full max-h-full p-3 pb-18"> {/* Add pb-16 for space above tabs */}
+                                {activeTab === 'text' && (
+                                    <div className="flex flex-col gap-4"> {/* Remove pb-14 */}
+                                        {/* Text Layers */}
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="text-xs text-muted-foreground">Text Layers</Label>
+                                                <Button variant="outline" size="sm" onClick={addText} className="text-xs h-7 px-2">
+                                                    Add
+                                                </Button>
+                                            </div>
+                                            <div className="space-y-1">
+                                                {texts.map((text, index) => (
+                                                    <div key={index} className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${activeTextIndex === index ? 'bg-primary/10' : 'hover:bg-primary/5'}`} onClick={() => setActiveTextIndex(index)}>
+                                                        <span className="truncate text-xs" style={{ fontFamily: text.font }}>{text.content}</span>
+                                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteText(index) }} className="h-5 w-5">
+                                                            <Trash2 className="w-3 h-3" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <Separator />
+
+                                        {/* Text Content */}
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-muted-foreground">Content</Label>
+                                            <Textarea
+                                                value={activeText.content}
+                                                onChange={(e) => handleTextChange('content', e.target.value)}
+                                                className="min-h-[50px] resize-none text-xs"
+                                                placeholder="Enter your text"
+                                            />
+                                        </div>
+
+                                        {/* Font Selection */}
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-muted-foreground">Font</Label>
+                                            <Select value={activeText.font} onValueChange={(value) => handleTextChange('font', value)}>
+                                                <SelectTrigger className="w-full h-9 text-xs">
+                                                    <SelectValue placeholder="Select font" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {googleFonts.map(f => (
+                                                        <SelectItem key={f.value} value={f.value} className={f.className}>
+                                                            <span style={{ fontFamily: f.value }} className="text-xs">{f.label}</span>
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        {/* Color */}
+                                        <div className="flex flex-col gap-2 w-full">
+                                            <Label className="text-xs text-muted-foreground">Color</Label>
+                                            <div className="flex items-center gap-2 w-full relative">
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <span
+                                                            className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-primary/10 absolute left-2 top-1/2 -translate-y-1/2"
+                                                            style={{ backgroundColor: activeText.color }}
+                                                        />
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-auto p-2" align="start">
+                                                        <HexColorPicker
+                                                            color={activeText.color}
+                                                            onChange={(color) => handleTextChange('color', color)}
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <Input
+                                                    className="pl-10 h-9 text-xs"
+                                                    type="text"
+                                                    value={activeText.color.startsWith("#") ? activeText.color : `#${activeText.color}`}
+                                                    placeholder="Color"
+                                                    onChange={(e) => {
+                                                        const color = e.target.value.startsWith("#") ? e.target.value : `#${e.target.value}`;
+                                                        handleTextChange('color', color);
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Typography Controls */}
+                                        <div className="flex flex-col gap-3">
+                                            <Slider
+                                                label="Size"
+                                                value={[activeText.fontSize]}
+                                                onValueChange={([val]) => handleTextChange('fontSize', val)}
+                                                max={200}
+                                                step={1}
+                                            />
+                                            <Slider
+                                                label="Opacity"
+                                                value={[activeText.opacity ?? 1]}
+                                                onValueChange={([val]) => handleTextChange('opacity', val)}
+                                                max={1}
+                                                step={0.01}
+                                            />
+                                            <Slider
+                                                label="Letter Spacing"
+                                                value={[activeText.letterSpacing ?? 0]}
+                                                onValueChange={([val]) => handleTextChange('letterSpacing', val)}
+                                                max={50}
+                                                step={1}
+                                            />
+                                            <Slider
+                                                label="Line Height"
+                                                value={[activeText.lineHeight ?? 1.2]}
+                                                onValueChange={([val]) => handleTextChange('lineHeight', val)}
+                                                max={3}
+                                                step={0.1}
+                                            />
+                                        </div>
+
+                                        <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-8 text-xs">
+                                            <RefreshCw className="w-3 h-3 mr-1" />
+                                            Reset
+                                        </Button>
+                                    </div>
+                                )}
+                                {activeTab === 'image' && (
+                                    <div className="flex flex-col gap-4">
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-muted-foreground">Background</Label>
+                                            <div className="flex flex-col gap-3">
+                                                <Slider
+                                                    label="Brightness"
+                                                    value={[bgBrightness]}
+                                                    onValueChange={([val]) => setBgBrightness(val)}
+                                                    max={200}
+                                                    step={1}
+                                                />
+                                                <Slider
+                                                    label="Contrast"
+                                                    value={[bgContrast]}
+                                                    onValueChange={([val]) => setBgContrast(val)}
+                                                    max={200}
+                                                    step={1}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <Separator />
+
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-muted-foreground">Foreground</Label>
+                                            <div className="flex flex-col gap-3">
+                                                <Slider
+                                                    label="Brightness"
+                                                    value={[fgBrightness]}
+                                                    onValueChange={([val]) => setFgBrightness(val)}
+                                                    max={200}
+                                                    step={1}
+                                                />
+                                                <Slider
+                                                    label="Contrast"
+                                                    value={[fgContrast]}
+                                                    onValueChange={([val]) => setFgContrast(val)}
+                                                    max={200}
+                                                    step={1}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <Button variant="outline" size="sm" onClick={resetImageEdits} className="w-full h-8 text-xs">
+                                            <RefreshCw className="w-3 h-3 mr-1" />
+                                            Reset
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </section>
+                        {/* TabsList (tab buttons) sticky at bottom, but inside Tabs */}
+                        <div className="fixed bottom-0 left-0 w-full z-40 bg-background border-t border-primary/10 p-2">
+                            <TabsList className="w-full flex items-center gap-1 h-10 rounded-2xl">
+                                <TabsTrigger
+                                    value="text"
+                                    className="flex-1 h-10 text-xs border border-primary/20 p-1 items-center justify-center gap-0.5 min-h-0 rounded-xl"
+                                >
+                                    <Type className="w-2.5 h-2.5" />
+                                    <span className="text-[0.625rem]">Text</span>
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="image"
+                                    className="flex-1 h-10 text-xs border border-primary/20 p-1 items-center justify-center gap-0.5 min-h-0 rounded-xl"
+                                >
+                                    <ImageIcon className="w-2.5 h-2.5" />
+                                    <span className="text-[0.625rem]">Image</span>
+                                </TabsTrigger>
+                            </TabsList>
+                        </div>
+                    </Tabs>
+                </aside>
+            </div>
+            {/* Bottom Drawer for PositionControl - OUTSIDE main content, overlays whole app */}
+            {positionDrawerOpen && (
+                <>
+                    {/* Backdrop overlay */}
+                    <div
+                        className="fixed inset-0 z-[998] bg-black/40"
+                        onClick={() => setPositionDrawerOpen(false)}
+                    />
+                    <div className="fixed inset-x-0 bottom-0 z-[999] bg-secondary rounded-t-xl shadow-2xl border-t border-primary/10 p-4 mx-2 flex flex-col items-center animate-slide-up min-h-[30vh] max-h-[40vh]">
+                        {/* Drawer handle - more visible */}
+                        <div className="flex justify-center w-full">
+                            <div className="w-12 h-1 rounded-full bg-white shadow-md mb-2" />
+                        </div>
+                        <PositionControl
+                            value={toControlCoords(activeText.position, maxX, maxY)}
+                            onChange={handlePositionChange}
+                            width={maxX}
+                            height={maxY}
+                            className="max-w-[260px] max-h-[200px]"
+                        />
+                    </div>
+                </>
+            )}
+            <Toaster />
+        </div>
+    );
+} 
