@@ -74,8 +74,9 @@ const getQuarterPosition = (img?: HTMLImageElement) => ({
 });
 
 const defaultTextSettings: TextSettings = {
-    font: 'Poppins',
-    fontSize: 50,
+    font: 'Montserrat',
+    fontSize: 100,
+    fontWeight: '400',
     color: '#000000',
     content: 'Your Text Here',
     position: getQuarterPosition(),
@@ -162,7 +163,7 @@ export default function EditorPage() {
         ctx.filter = 'none';
 
         // Draw texts
-        addTextToCanvas(ctx, texts);
+        addTextToCanvas(ctx, texts, activeTextIndex);
 
         // Draw foreground
         ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
@@ -306,14 +307,14 @@ export default function EditorPage() {
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "text" | "image")} className="flex flex-col items-center w-full">
                         <TabsList className="w-full flex items-center gap-1 h-8 lg:h-10">
                             <TabsTrigger
-                                value="text"
+                                value={"text"}
                                 className="flex-1 text-xs border border-primary/20 p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0"
                             >
                                 <Type className="w-2.5 h-2.5" />
                                 <span className="text-[0.625rem]">Text</span>
                             </TabsTrigger>
                             <TabsTrigger
-                                value="image"
+                                value={"image"}
                                 className="flex-1 text-xs border border-primary/20 p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0"
                             >
                                 <ImageIcon className="w-2.5 h-2.5" />
@@ -375,6 +376,26 @@ export default function EditorPage() {
                                             </SelectContent>
                                         </Select>
                                     </div>
+                                    {/* Font Weight Selection */}
+                                    <div className="flex flex-col gap-2">
+                                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                                        <Select value={activeText.fontWeight?.toString() ?? '400'} onValueChange={(value) => handleTextChange('fontWeight', value)}>
+                                            <SelectTrigger className="w-full h-9 text-xs">
+                                                <SelectValue placeholder="Select weight" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="100">100 Thin</SelectItem>
+                                                <SelectItem value="200">200 Extra Light</SelectItem>
+                                                <SelectItem value="300">300 Light</SelectItem>
+                                                <SelectItem value="400">400 Regular</SelectItem>
+                                                <SelectItem value="500">500 Medium</SelectItem>
+                                                <SelectItem value="600">600 Semi Bold</SelectItem>
+                                                <SelectItem value="700">700 Bold</SelectItem>
+                                                <SelectItem value="800">800 Extra Bold</SelectItem>
+                                                <SelectItem value="900">900 Black</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
 
                                     {/* Color */}
                                     <div className="flex flex-col gap-2 w-full">
@@ -428,6 +449,7 @@ export default function EditorPage() {
                                             value={[activeText.letterSpacing ?? 0]}
                                             onValueChange={([val]) => handleTextChange('letterSpacing', val)}
                                             max={50}
+                                            min={-50}
                                             step={1}
                                         />
                                         <Slider
@@ -435,6 +457,7 @@ export default function EditorPage() {
                                             value={[activeText.lineHeight ?? 1.2]}
                                             onValueChange={([val]) => handleTextChange('lineHeight', val)}
                                             max={3}
+                                            min={-3}
                                             step={0.1}
                                         />
                                     </div>

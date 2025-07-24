@@ -64,8 +64,9 @@ const getQuarterPosition = (img?: HTMLImageElement) => ({
 });
 
 const defaultTextSettings: TextSettings = {
-    font: 'Poppins',
-    fontSize: 50,
+    font: 'Montserrat',
+    fontSize: 100,
+    fontWeight: '400',
     color: '#000000',
     content: 'Your Text Here',
     position: getQuarterPosition(),
@@ -158,7 +159,7 @@ export default function MobileEditor(props: MobileEditorProps) {
 
     useEffect(() => {
         drawCanvas();
-    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast]);
+    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast, activeTextIndex]);
 
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 1024);
@@ -315,6 +316,26 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 </SelectContent>
                                             </Select>
                                         </div>
+                                        {/* Font Weight Selection */}
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-muted-foreground">Font Weight</Label>
+                                            <Select value={activeText.fontWeight?.toString() ?? '400'} onValueChange={(value) => handleTextChange('fontWeight', value)}>
+                                                <SelectTrigger className="w-full h-9 text-xs">
+                                                    <SelectValue placeholder="Select weight" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="100">100 Thin</SelectItem>
+                                                    <SelectItem value="200">200 Extra Light</SelectItem>
+                                                    <SelectItem value="300">300 Light</SelectItem>
+                                                    <SelectItem value="400">400 Regular</SelectItem>
+                                                    <SelectItem value="500">500 Medium</SelectItem>
+                                                    <SelectItem value="600">600 Semi Bold</SelectItem>
+                                                    <SelectItem value="700">700 Bold</SelectItem>
+                                                    <SelectItem value="800">800 Extra Bold</SelectItem>
+                                                    <SelectItem value="900">900 Black</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
 
                                         {/* Color */}
                                         <div className="flex flex-col gap-2 w-full">
@@ -368,6 +389,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 value={[activeText.letterSpacing ?? 0]}
                                                 onValueChange={([val]) => handleTextChange('letterSpacing', val)}
                                                 max={50}
+                                                min={-50}
                                                 step={1}
                                             />
                                             <Slider
@@ -375,6 +397,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 value={[activeText.lineHeight ?? 1.2]}
                                                 onValueChange={([val]) => handleTextChange('lineHeight', val)}
                                                 max={3}
+                                                min={-3}
                                                 step={0.1}
                                             />
                                         </div>
