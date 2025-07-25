@@ -77,9 +77,19 @@ export interface TextSettings {
       }
       // Draw text
       for (let j = 0; j < lines.length; j++) {
-        const x = 0, y = j * fontSize * lineHeight;
+        const y = (j * fontSize * lineHeight) - (totalHeight / 2) + (fontSize * lineHeight) / 2;
+        // Calculate line width (including letter spacing)
+        let lineWidth = 0;
         if (letterSpacing) {
-          let currentX = x;
+          for (const char of lines[j]) {
+            lineWidth += ctx.measureText(char).width + letterSpacing;
+          }
+        } else {
+          lineWidth = ctx.measureText(lines[j]).width;
+        }
+        // Center the line horizontally
+        let currentX = letterSpacing ? -lineWidth / 2 : 0;
+        if (letterSpacing) {
           for (const char of lines[j]) {
             ctx.fillStyle = color;
             ctx.fillText(char, currentX, y);
@@ -92,11 +102,11 @@ export interface TextSettings {
           }
         } else {
           ctx.fillStyle = color;
-          ctx.fillText(lines[j], x, y);
+          ctx.fillText(lines[j], 0, y);
           if (strokeColor && strokeWidth) {
             ctx.lineWidth = strokeWidth;
             ctx.strokeStyle = strokeColor;
-            ctx.strokeText(lines[j], x, y);
+            ctx.strokeText(lines[j], 0, y);
           }
         }
       }

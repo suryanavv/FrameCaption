@@ -189,7 +189,7 @@ export default function MobileEditor(props: MobileEditorProps) {
             activeText.content,
             activeText.font,
             activeText.fontSize,
-            activeText.fontWeight ?? '400',
+            activeText.fontWeight ?? '700',
             activeText.letterSpacing ?? 0,
             activeText.lineHeight ?? 1.2
         );
@@ -363,7 +363,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                         {/* Font Weight Selection */}
                                         <div className="flex flex-col gap-2">
                                             <Label className="text-xs text-muted-foreground">Font Weight</Label>
-                                            <Select value={activeText.fontWeight?.toString() ?? '400'} onValueChange={(value) => handleTextChange('fontWeight', value)}>
+                                            <Select value={activeText.fontWeight?.toString() ?? '700'} onValueChange={(value) => handleTextChange('fontWeight', value)}>
                                                 <SelectTrigger className="w-full h-9 text-xs">
                                                     <SelectValue placeholder="Select weight" />
                                                 </SelectTrigger>

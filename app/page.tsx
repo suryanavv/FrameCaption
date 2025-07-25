@@ -72,9 +72,9 @@ const getCenterPosition = (img?: HTMLImageElement) => ({
 });
 
 const defaultTextSettings: TextSettings = {
-    font: 'Montserrat',
+    font: 'Poppins',
     fontSize: 100,
-    fontWeight: '400',
+    fontWeight: '700', // Default to Bold
     color: '#000000',
     content: 'Your Text Here',
     position: getCenterPosition(),
@@ -144,7 +144,7 @@ export default function EditorPage() {
             activeText.content,
             activeText.font,
             activeText.fontSize,
-            activeText.fontWeight ?? '400',
+            activeText.fontWeight ?? '700',
             activeText.letterSpacing ?? 0,
             activeText.lineHeight ?? 1.2
         );
@@ -435,7 +435,7 @@ export default function EditorPage() {
                                     {/* Font Weight Selection */}
                                     <div className="flex flex-col gap-2">
                                         <Label className="text-xs text-muted-foreground">Font Weight</Label>
-                                        <Select value={activeText.fontWeight?.toString() ?? '400'} onValueChange={(value) => handleTextChange('fontWeight', value)}>
+                                        <Select value={activeText.fontWeight?.toString() ?? '700'} onValueChange={(value) => handleTextChange('fontWeight', value)}>
                                             <SelectTrigger className="w-full h-9 text-xs">
                                                 <SelectValue placeholder="Select weight" />
                                             </SelectTrigger>
