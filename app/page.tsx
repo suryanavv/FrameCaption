@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type } from 'lucide-react';
 import { removeImageBackground } from '@/lib/backgroundRemoval';
 import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { Separator } from "@/components/ui/separator";
 import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono, roboto, openSans, lato, merriweather, playfairDisplay, rubik, nunito, oswald, raleway, ptSerif, cabin, quicksand, firaMono, jetbrainsMono } from "@/components/fonts";
@@ -21,17 +21,6 @@ import { HexColorPicker } from "react-colorful";
 import dynamic from 'next/dynamic';
 
 const MobileEditor = dynamic(() => import('./MobileEditor'), { ssr: false });
-
-function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 1024);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-  return isMobile;
-}
 
 const googleFonts = [
     { label: "Poppins", value: "Poppins", className: poppins.variable },
@@ -86,27 +75,7 @@ const defaultTextSettings: TextSettings = {
     sliderY: 0,
 };
 
-// Helper to measure text width and height
-function measureText(ctx: CanvasRenderingContext2D, text: string, font: string, fontSize: number, fontWeight: string | number, letterSpacing: number, lineHeight: number) {
-    ctx.save();
-    ctx.font = `${fontWeight} ${fontSize}px ${font}`;
-    const lines = text.split('\n');
-    let maxWidth = 0;
-    for (const line of lines) {
-        let width = 0;
-        if (letterSpacing) {
-            for (const char of line) {
-                width += ctx.measureText(char).width + letterSpacing;
-            }
-        } else {
-            width = ctx.measureText(line).width;
-        }
-        if (width > maxWidth) maxWidth = width;
-    }
-    const height = lines.length * fontSize * lineHeight;
-    ctx.restore();
-    return { width: maxWidth, height };
-}
+
 
 export default function EditorPage() {
     // Always call all hooks
@@ -130,28 +99,7 @@ export default function EditorPage() {
         return () => window.removeEventListener('resize', check);
     }, []);
 
-    // Create a ref for a hidden canvas for measuring
-    const measureCanvasRef = useRef<HTMLCanvasElement>(null);
 
-    // Add a ref for debounce timeout
-    const positionDebounceRef = useRef<NodeJS.Timeout | null>(null);
-
-    // Helper to get text bounding box for activeText
-    function getActiveTextBox() {
-        const canvas = measureCanvasRef.current;
-        if (!canvas) return { width: 0, height: 0 };
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return { width: 0, height: 0 };
-        return measureText(
-            ctx,
-            activeText.content,
-            activeText.font,
-            activeText.fontSize,
-            activeText.fontWeight ?? '700',
-            activeText.letterSpacing ?? 0,
-            activeText.lineHeight ?? 1.2
-        );
-    }
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -199,7 +147,7 @@ export default function EditorPage() {
 
         // Draw texts (centered)
         // Adjust position to be center
-        const centeredTexts = texts.map((t, i) => ({
+        const centeredTexts = texts.map((t) => ({
             ...t,
             position: {
                 x: t.position.x,
@@ -270,16 +218,6 @@ export default function EditorPage() {
     };
 
     const activeText = texts[activeTextIndex];
-    const maxX = originalImage ? originalImage.width : 1000;
-    const maxY = originalImage ? originalImage.height : 1000;
-
-    // Add state for new coordinate system
-    // Remove global sliderX, sliderY state
-    // Instead, store sliderX and sliderY in each text object
-    // When switching activeTextIndex, update the sliders to match the active text's position
-    // When moving sliders, only update the active text's position
-    // On text add, initialize with sliderX: 0, sliderY: 0
-    // Add effect to map slider values to pixel positions and update activeText.position
     useEffect(() => {
         if (!originalImage) return;
         const width = originalImage.width;

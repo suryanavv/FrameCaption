@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { onest } from "@/components/fonts";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeSwitch } from "@/components/ui/themeSwitch";
 
 export const metadata: Metadata = {
   title: "POVImage - Text Behind Image Editor",

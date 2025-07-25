@@ -87,37 +87,17 @@ interface MobileEditorProps {
     setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-// Helper to measure text width and height
-function measureText(ctx: CanvasRenderingContext2D, text: string, font: string, fontSize: number, fontWeight: string | number, letterSpacing: number, lineHeight: number) {
-    ctx.save();
-    ctx.font = `${fontWeight} ${fontSize}px ${font}`;
-    const lines = text.split('\n');
-    let maxWidth = 0;
-    for (const line of lines) {
-        let width = 0;
-        if (letterSpacing) {
-            for (const char of line) {
-                width += ctx.measureText(char).width + letterSpacing;
-            }
-        } else {
-            width = ctx.measureText(line).width;
-        }
-        if (width > maxWidth) maxWidth = width;
-    }
-    const height = lines.length * fontSize * lineHeight;
-    ctx.restore();
-    return { width: maxWidth, height };
-}
+
 
 export default function MobileEditor(props: MobileEditorProps) {
     // Use props instead of local state/handlers
     const {
-        image, setImage, originalImage, setOriginalImage, foregroundImage, setForegroundImage,
+        image, originalImage, foregroundImage,
         texts, setTexts, activeTextIndex, setActiveTextIndex, bgBrightness, setBgBrightness,
         bgContrast, setBgContrast, fgBrightness, setFgBrightness, fgContrast, setFgContrast,
-        activeTab, setActiveTab, canvasRef, handleImageUpload, drawCanvas, handleTextChange,
+        activeTab, setActiveTab, canvasRef, handleImageUpload, handleTextChange,
         addText, deleteText, downloadImage, resetImageEdits, resetTextEdits,
-        tryAnotherImage, activeText, loading, setLoading
+        tryAnotherImage, activeText, loading
     } = props;
 
     const [themeDrawerOpen, setThemeDrawerOpen] = useState(false);
@@ -178,22 +158,7 @@ export default function MobileEditor(props: MobileEditorProps) {
     // Create a ref for a hidden canvas for measuring
     const measureCanvasRef = useRef<HTMLCanvasElement>(null);
 
-    // Helper to get text bounding box for activeText
-    function getActiveTextBox() {
-        const canvas = measureCanvasRef.current;
-        if (!canvas) return { width: 0, height: 0 };
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return { width: 0, height: 0 };
-        return measureText(
-            ctx,
-            activeText.content,
-            activeText.font,
-            activeText.fontSize,
-            activeText.fontWeight ?? '700',
-            activeText.letterSpacing ?? 0,
-            activeText.lineHeight ?? 1.2
-        );
-    }
+
 
     // Remove debounce logic from the effect that updates text position from sliderX/sliderY.
     useEffect(() => {

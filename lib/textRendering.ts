@@ -51,17 +51,6 @@ export interface TextSettings {
       // Letter spacing and line height
       const lines = content.split('\n');
       let maxWidth = 0;
-      const maxLineWidth = lines.reduce((acc, line) => {
-        let lineWidth = 0;
-        if (letterSpacing) {
-          for (const char of line) {
-            lineWidth += ctx.measureText(char).width + letterSpacing;
-          }
-        } else {
-          lineWidth = ctx.measureText(line).width;
-        }
-        return Math.max(acc, lineWidth);
-      }, 0);
       const totalHeight = lines.length * fontSize * lineHeight;
       // Calculate bounding box for indicator
       for (let j = 0; j < lines.length; j++) {
