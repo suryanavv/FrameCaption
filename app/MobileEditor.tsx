@@ -58,34 +58,18 @@ const getCenterPosition = (img?: HTMLImageElement) => ({
     y: (img?.height ?? 1000) / 2,
 });
 
-const getQuarterPosition = (img?: HTMLImageElement) => ({
-    x: (img?.width ?? 1000) / 4,
-    y: (img?.height ?? 1000) / 4,
-});
-
 const defaultTextSettings: TextSettings = {
     font: 'Montserrat',
     fontSize: 100,
     fontWeight: '400',
     color: '#000000',
     content: 'Your Text Here',
-    position: getQuarterPosition(),
+    position: getCenterPosition(),
     opacity: 1,
     letterSpacing: 0,
     lineHeight: 1.2,
     alignment: 'start'
 };
-
-// Helper to map between canvas and control coordinates
-// For 1:1 mapping, just pass through the position
-const toControlCoords = (pos: { x: number; y: number }, width: number, height: number) => ({
-    x: pos.x - width / 2,
-    y: pos.y - height / 2,
-});
-const toCanvasCoords = (pos: { x: number; y: number }, width: number, height: number) => ({
-    x: pos.x + width / 2,
-    y: pos.y + height / 2,
-});
 
 interface MobileEditorProps {
     image: File | null;
@@ -112,7 +96,6 @@ interface MobileEditorProps {
     handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
     drawCanvas: () => void;
     handleTextChange: (key: keyof TextSettings, value: TextSettings[keyof TextSettings]) => void;
-    handlePositionChange: (pos: { x: number; y: number }) => void;
     addText: () => void;
     deleteText: (index: number) => void;
     downloadImage: () => void;
@@ -122,15 +105,30 @@ interface MobileEditorProps {
     activeText: TextSettings;
     maxX: number;
     maxY: number;
-    PositionControl: React.ComponentType<{
-        value: { x: number; y: number };
-        onChange: (pos: { x: number; y: number }) => void;
-        width: number;
-        height: number;
-        className?: string;
-    }>;
     loading: boolean;
     setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+// Helper to measure text width and height
+function measureText(ctx: CanvasRenderingContext2D, text: string, font: string, fontSize: number, fontWeight: string | number, letterSpacing: number, lineHeight: number) {
+    ctx.save();
+    ctx.font = `${fontWeight} ${fontSize}px ${font}`;
+    const lines = text.split('\n');
+    let maxWidth = 0;
+    for (let line of lines) {
+        let width = 0;
+        if (letterSpacing) {
+            for (const char of line) {
+                width += ctx.measureText(char).width + letterSpacing;
+            }
+        } else {
+            width = ctx.measureText(line).width;
+        }
+        if (width > maxWidth) maxWidth = width;
+    }
+    const height = lines.length * fontSize * lineHeight;
+    ctx.restore();
+    return { width: maxWidth, height };
 }
 
 export default function MobileEditor(props: MobileEditorProps) {
@@ -140,11 +138,10 @@ export default function MobileEditor(props: MobileEditorProps) {
         texts, setTexts, activeTextIndex, setActiveTextIndex, bgBrightness, setBgBrightness,
         bgContrast, setBgContrast, fgBrightness, setFgBrightness, fgContrast, setFgContrast,
         activeTab, setActiveTab, canvasRef, handleImageUpload, drawCanvas, handleTextChange,
-        handlePositionChange, addText, deleteText, downloadImage, resetImageEdits, resetTextEdits,
-        tryAnotherImage, activeText, maxX, maxY, PositionControl, loading, setLoading
+        addText, deleteText, downloadImage, resetImageEdits, resetTextEdits,
+        tryAnotherImage, activeText, maxX, maxY, loading, setLoading
     } = props;
 
-    const [positionDrawerOpen, setPositionDrawerOpen] = useState(false);
     const [themeDrawerOpen, setThemeDrawerOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const { theme } = useTheme();
@@ -157,8 +154,50 @@ export default function MobileEditor(props: MobileEditorProps) {
         };
     }, []);
 
+    // Add state for new coordinate system
+    // Remove global sliderX, sliderY state
+    // Instead, store sliderX and sliderY in each text object
+    // When switching activeTextIndex, update the sliders to match the active text's position
+    // When moving sliders, only update the active text's position
+    // On text add, initialize with sliderX: 0, sliderY: 0
+    // Remove any useState for sliderX/sliderY and any references to setSliderX/setSliderY. Only use activeText.sliderX and handleTextChange('sliderX', val).
+
+    // Rename the local drawCanvas function to localDrawCanvas
+    const localDrawCanvas = () => {
+        const canvas = canvasRef.current;
+        if (!canvas || !originalImage || !foregroundImage) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        canvas.width = originalImage.width;
+        canvas.height = originalImage.height;
+
+        // Draw background
+        ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%)`;
+        ctx.drawImage(originalImage, 0, 0);
+        ctx.filter = 'none';
+
+        // Draw texts (centered)
+        // In localDrawCanvas, do not subtract half the text width/height from t.position. Use t.position.x and t.position.y directly.
+        const centeredTexts = texts.map((t, i) => ({
+            ...t,
+            position: {
+                x: t.position.x,
+                y: t.position.y
+            }
+        }));
+        addTextToCanvas(ctx, centeredTexts, activeTextIndex);
+
+        // Draw foreground
+        ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
+        ctx.drawImage(foregroundImage, 0, 0);
+        ctx.filter = 'none';
+    };
+
+    // Update all references to drawCanvas() within this file to localDrawCanvas()
     useEffect(() => {
-        drawCanvas();
+        localDrawCanvas();
     }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast, activeTextIndex]);
 
     useEffect(() => {
@@ -169,6 +208,51 @@ export default function MobileEditor(props: MobileEditorProps) {
     }, []);
 
     const resolution = originalImage ? { width: originalImage.width, height: originalImage.height } : { width: 1000, height: 1000 };
+
+    // Create a ref for a hidden canvas for measuring
+    const measureCanvasRef = useRef<HTMLCanvasElement>(null);
+
+    // Helper to get text bounding box for activeText
+    function getActiveTextBox() {
+        const canvas = measureCanvasRef.current;
+        if (!canvas) return { width: 0, height: 0 };
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return { width: 0, height: 0 };
+        return measureText(
+            ctx,
+            activeText.content,
+            activeText.font,
+            activeText.fontSize,
+            activeText.fontWeight ?? '400',
+            activeText.letterSpacing ?? 0,
+            activeText.lineHeight ?? 1.2
+        );
+    }
+
+    // Add effect to map slider values to pixel positions and update activeText.position
+    useEffect(() => {
+        if (!originalImage) return;
+        const width = originalImage.width;
+        const height = originalImage.height;
+        const pixels_per_unit_X = width / 200;
+        const pixels_per_unit_Y = height / 200;
+        const pixel_offset_X = activeText.position.x - (width / 2);
+        const pixel_offset_Y = activeText.position.y - (height / 2);
+        const target_x = (width / 2) + pixel_offset_X;
+        const target_y = (height / 2) + pixel_offset_Y;
+        // Update activeText position
+        setTexts(prev => {
+            const newTexts = [...prev];
+            newTexts[activeTextIndex] = {
+                ...newTexts[activeTextIndex],
+                position: { x: target_x, y: target_y }
+            };
+            return newTexts;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTextIndex]);
+
+    // Remove calculation of textBox, canvasCenterX, canvasCenterY, rangeX, rangeY, offsetX, offsetY, horizontalPercent, verticalPercent, handleHorizontalSlider, handleVerticalSlider, and all JSX for horizontal/vertical position sliders.
 
     return (
         <div className="w-full h-screen bg-background overflow-hidden flex flex-col">
@@ -249,10 +333,6 @@ export default function MobileEditor(props: MobileEditorProps) {
                             <Button variant="outline" onClick={tryAnotherImage} className="h-9 text-xs flex-1 flex items-center gap-2">
                                 <ImageIcon className="w-4 h-4" />
                                 Try Another
-                            </Button>
-                            {/* Move/PositionControl Drawer Button */}
-                            <Button variant="outline" className="h-9 w-9 p-0 flex items-center justify-center" onClick={() => setPositionDrawerOpen(true)}>
-                                <Move className="w-5 h-5" />
                             </Button>
                         </div>
                     </section>
@@ -402,6 +482,27 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             />
                                         </div>
 
+                                        {/* Match desktop X/Y sliders for text position */}
+                                        <div className="flex flex-col gap-2 w-full">
+                                            <Label className="text-xs text-muted-foreground mb-1">Text Position</Label>
+                                            <Slider
+                                                label="Horizontal (X)"
+                                                value={[activeText.position.x]}
+                                                onValueChange={([val]) => handleTextChange('position', { ...activeText.position, x: val })}
+                                                min={-100}
+                                                max={100}
+                                                step={1}
+                                            />
+                                            <Slider
+                                                label="Vertical (Y)"
+                                                value={[activeText.position.y]}
+                                                onValueChange={([val]) => handleTextChange('position', { ...activeText.position, y: val })}
+                                                min={-100}
+                                                max={100}
+                                                step={1}
+                                            />
+                                        </div>
+
                                         <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-8 text-xs">
                                             <RefreshCw className="w-3 h-3 mr-1" />
                                             Reset
@@ -482,30 +583,9 @@ export default function MobileEditor(props: MobileEditorProps) {
                     </Tabs>
                 </aside>
             </div>
-            {/* Bottom Drawer for PositionControl - OUTSIDE main content, overlays whole app */}
-            {positionDrawerOpen && (
-                <>
-                    {/* Backdrop overlay */}
-                    <div
-                        className="fixed inset-0 z-[998] bg-black/40"
-                        onClick={() => setPositionDrawerOpen(false)}
-                    />
-                    <div className="fixed inset-x-0 bottom-0 z-[999] bg-secondary rounded-t-xl shadow-2xl border-t border-primary/10 p-4 mx-2 flex flex-col items-center animate-slide-up min-h-[30vh] max-h-[40vh]">
-                        {/* Drawer handle - more visible */}
-                        <div className="flex justify-center w-full">
-                            <div className="w-12 h-1 rounded-full bg-white shadow-md mb-2" />
-                        </div>
-                        <PositionControl
-                            value={toControlCoords(activeText.position, resolution.width, resolution.height)}
-                            onChange={pos => handlePositionChange(pos)}
-                            width={resolution.width}
-                            height={resolution.height}
-                            className="max-w-[260px] max-h-[200px]"
-                        />
-                    </div>
-                </>
-            )}
             <Toaster />
+            {/* In the JSX, add a hidden canvas for measuring */}
+            <canvas ref={measureCanvasRef} style={{ display: 'none' }} />
         </div>
     );
 } 

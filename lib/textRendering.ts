@@ -16,6 +16,8 @@ export interface TextSettings {
     opacity?: number;
     letterSpacing?: number;
     lineHeight?: number;
+    sliderX?: number;
+    sliderY?: number;
   }
   
   export function addTextToCanvas(
@@ -37,7 +39,8 @@ export interface TextSettings {
       } = settings;
       ctx.save();
       ctx.font = `${fontWeight} ${fontSize}px ${font}`;
-      ctx.textAlign = alignment;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.globalAlpha = opacity;
       if (shadowColor) ctx.shadowColor = shadowColor;
       if (shadowBlur) ctx.shadowBlur = shadowBlur;
@@ -91,15 +94,19 @@ export interface TextSettings {
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
         ctx.globalAlpha = 1;
-        ctx.strokeStyle = 'oklch(87% 0 0)';
+        // Calculate top-left in canvas coordinates for center alignment
+        let boxX = position.x - maxWidth / 2;
+        let boxY = position.y - totalHeight / 2;
+        // Draw semi-transparent fill
+        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
         ctx.lineWidth = 2;
-        // Calculate top-left in canvas coordinates
-        let boxX = position.x;
-        let boxY = position.y;
-        if (alignment === 'center') boxX -= maxWidth / 2;
-        else if (alignment === 'end' || alignment === 'right') boxX -= maxWidth;
-        // Draw rectangle
-        ctx.strokeRect(boxX - 4, boxY - fontSize * 0.8, maxWidth + 8, totalHeight + 8);
+        ctx.beginPath();
+        ctx.roundRect(boxX - 6, boxY - 6, maxWidth + 12, totalHeight + 12, 8);
+        ctx.fill();
+        ctx.shadowColor = 'rgba(0,0,0,0.10)';
+        ctx.shadowBlur = 4;
+        ctx.stroke();
         ctx.restore();
       }
       ctx.restore();

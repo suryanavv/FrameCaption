@@ -68,9 +68,9 @@ const googleFonts = [
     { label: "JetBrains Mono", value: "JetBrains Mono", className: jetbrainsMono.variable },
 ];
 
-const getQuarterPosition = (img?: HTMLImageElement) => ({
-    x: (img?.width ?? 1000) / 4,
-    y: (img?.height ?? 1000) / 4,
+const getCenterPosition = (img?: HTMLImageElement) => ({
+    x: (img?.width ?? 1000) / 2,
+    y: (img?.height ?? 1000) / 2,
 });
 
 const defaultTextSettings: TextSettings = {
@@ -79,23 +79,36 @@ const defaultTextSettings: TextSettings = {
     fontWeight: '400',
     color: '#000000',
     content: 'Your Text Here',
-    position: getQuarterPosition(),
+    position: getCenterPosition(),
     opacity: 1,
     letterSpacing: 0,
     lineHeight: 1.2,
-    alignment: 'start'
+    alignment: 'start',
+    sliderX: 0, // Add sliderX and sliderY to defaultTextSettings
+    sliderY: 0,
 };
 
-// Helper to map between canvas and control coordinates
-// For 1:1 mapping, just pass through the position
-const toControlCoords = (pos: { x: number; y: number }, width: number, height: number) => ({
-    x: pos.x - width / 2,
-    y: pos.y - height / 2,
-});
-const toCanvasCoords = (pos: { x: number; y: number }, width: number, height: number) => ({
-    x: pos.x + width / 2,
-    y: pos.y + height / 2,
-});
+// Helper to measure text width and height
+function measureText(ctx: CanvasRenderingContext2D, text: string, font: string, fontSize: number, fontWeight: string | number, letterSpacing: number, lineHeight: number) {
+    ctx.save();
+    ctx.font = `${fontWeight} ${fontSize}px ${font}`;
+    const lines = text.split('\n');
+    let maxWidth = 0;
+    for (let line of lines) {
+        let width = 0;
+        if (letterSpacing) {
+            for (const char of line) {
+                width += ctx.measureText(char).width + letterSpacing;
+            }
+        } else {
+            width = ctx.measureText(line).width;
+        }
+        if (width > maxWidth) maxWidth = width;
+    }
+    const height = lines.length * fontSize * lineHeight;
+    ctx.restore();
+    return { width: maxWidth, height };
+}
 
 export default function EditorPage() {
     // Always call all hooks
@@ -119,6 +132,26 @@ export default function EditorPage() {
         return () => window.removeEventListener('resize', check);
     }, []);
 
+    // Create a ref for a hidden canvas for measuring
+    const measureCanvasRef = useRef<HTMLCanvasElement>(null);
+
+    // Helper to get text bounding box for activeText
+    function getActiveTextBox() {
+        const canvas = measureCanvasRef.current;
+        if (!canvas) return { width: 0, height: 0 };
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return { width: 0, height: 0 };
+        return measureText(
+            ctx,
+            activeText.content,
+            activeText.font,
+            activeText.fontSize,
+            activeText.fontWeight ?? '400',
+            activeText.letterSpacing ?? 0,
+            activeText.lineHeight ?? 1.2
+        );
+    }
+
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
@@ -132,7 +165,7 @@ export default function EditorPage() {
                     const newTexts = [...prev];
                     newTexts[activeTextIndex] = {
                         ...newTexts[activeTextIndex],
-                        position: getQuarterPosition(img),
+                        position: getCenterPosition(img),
                     };
                     return newTexts;
                 });
@@ -147,6 +180,7 @@ export default function EditorPage() {
         }
     };
 
+    // In drawCanvas, do not subtract half the text width/height from t.position. Use t.position.x and t.position.y directly.
     const drawCanvas = () => {
         const canvas = canvasRef.current;
         if (!canvas || !originalImage || !foregroundImage) return;
@@ -162,8 +196,16 @@ export default function EditorPage() {
         ctx.drawImage(originalImage, 0, 0);
         ctx.filter = 'none';
 
-        // Draw texts
-        addTextToCanvas(ctx, texts, activeTextIndex);
+        // Draw texts (centered)
+        // Adjust position to be center
+        const centeredTexts = texts.map((t, i) => ({
+            ...t,
+            position: {
+                x: t.position.x,
+                y: t.position.y
+            }
+        }));
+        addTextToCanvas(ctx, centeredTexts, activeTextIndex);
 
         // Draw foreground
         ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
@@ -181,16 +223,9 @@ export default function EditorPage() {
         setTexts(newTexts);
     };
 
-    // Update handlePositionChange to map from control to canvas coordinates
-    const handlePositionChange = (pos: { x: number; y: number }) => {
-        const newTexts = [...texts];
-        newTexts[activeTextIndex].position = toCanvasCoords(pos, resolution.width, resolution.height);
-        setTexts(newTexts);
-    };
-
     const addText = () => {
-        const quarter = getQuarterPosition(originalImage ?? undefined);
-        setTexts([...texts, { ...defaultTextSettings, content: `New Text ${texts.length + 1}`, position: quarter }]);
+        const center = getCenterPosition(originalImage ?? undefined);
+        setTexts([...texts, { ...defaultTextSettings, content: `New Text ${texts.length + 1}`, position: center }]);
         setActiveTextIndex(texts.length);
     };
 
@@ -218,9 +253,9 @@ export default function EditorPage() {
     };
 
     const resetTextEdits = () => {
-        const quarter = getQuarterPosition(originalImage ?? undefined);
+        const center = getCenterPosition(originalImage ?? undefined);
         const newTexts = [...texts];
-        newTexts[activeTextIndex] = { ...defaultTextSettings, position: quarter };
+        newTexts[activeTextIndex] = { ...defaultTextSettings, position: center };
         setTexts(newTexts);
     };
 
@@ -228,7 +263,7 @@ export default function EditorPage() {
         setImage(null);
         setOriginalImage(null);
         setForegroundImage(null);
-        setTexts([{ ...defaultTextSettings, position: getQuarterPosition() }]);
+        setTexts([{ ...defaultTextSettings, position: getCenterPosition() }]);
         setActiveTextIndex(0);
         resetImageEdits();
     };
@@ -237,6 +272,34 @@ export default function EditorPage() {
     const resolution = originalImage ? { width: originalImage.width, height: originalImage.height } : { width: 1000, height: 1000 };
     const maxX = originalImage ? originalImage.width : 1000;
     const maxY = originalImage ? originalImage.height : 1000;
+
+    // Add state for new coordinate system
+    // Remove global sliderX, sliderY state
+    // Instead, store sliderX and sliderY in each text object
+    // When switching activeTextIndex, update the sliders to match the active text's position
+    // When moving sliders, only update the active text's position
+    // On text add, initialize with sliderX: 0, sliderY: 0
+    // Add effect to map slider values to pixel positions and update activeText.position
+    useEffect(() => {
+        if (!originalImage) return;
+        const width = originalImage.width;
+        const height = originalImage.height;
+        const pixels_per_unit_X = width / 200;
+        const pixels_per_unit_Y = height / 200;
+        const pixel_offset_X = (activeText.sliderX ?? 0) * pixels_per_unit_X;
+        const pixel_offset_Y = (activeText.sliderY ?? 0) * pixels_per_unit_Y;
+        const target_x = (width / 2) + pixel_offset_X;
+        const target_y = (height / 2) + pixel_offset_Y;
+        // Update activeText position
+        setTexts(prev => {
+            const newTexts = [...prev];
+            newTexts[activeTextIndex] = {
+                ...newTexts[activeTextIndex],
+                position: { x: target_x, y: target_y }
+            };
+            return newTexts;
+        });
+    }, [activeText.sliderX, activeText.sliderY, activeTextIndex, originalImage?.width, originalImage?.height]);
 
     // Only branch on rendering, not on hooks
     if (isMobile) {
@@ -267,7 +330,6 @@ export default function EditorPage() {
                 handleImageUpload={handleImageUpload}
                 drawCanvas={drawCanvas}
                 handleTextChange={handleTextChange}
-                handlePositionChange={handlePositionChange}
                 addText={addText}
                 deleteText={deleteText}
                 downloadImage={downloadImage}
@@ -277,7 +339,6 @@ export default function EditorPage() {
                 activeText={activeText}
                 maxX={maxX}
                 maxY={maxY}
-                PositionControl={PositionControl}
                 loading={loading}
                 setLoading={setLoading}
             />
@@ -462,6 +523,27 @@ export default function EditorPage() {
                                         />
                                     </div>
 
+                                    <div className="flex flex-col gap-2 w-full">
+                                        <Label className="text-xs text-muted-foreground mb-1">Text Position</Label>
+                                        
+                                                    <Slider
+                                                        label="Horizontal (X)"
+                                                        value={[activeText.sliderX ?? 0]}
+                                                        onValueChange={([val]) => handleTextChange('sliderX', val)}
+                                                        min={-100}
+                                                        max={100}
+                                                        step={1}
+                                                    />
+                                                    <Slider
+                                                        label="Vertical (Y)"
+                                                        value={[activeText.sliderY ?? 0]}
+                                                        onValueChange={([val]) => handleTextChange('sliderY', val)}
+                                                        min={-100}
+                                                        max={100}
+                                                        step={1}
+                                                    />
+                                        </div>
+
                                     <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-8 text-xs">
                                         <RefreshCw className="w-3 h-3 mr-1" />
                                         Reset
@@ -590,13 +672,7 @@ export default function EditorPage() {
                         <ThemeSwitch />
                     </div>
                     <div className="flex flex-col gap-2 w-full bg-secondary rounded-2xl p-4 border border-primary/10">
-                        <PositionControl
-                            value={toControlCoords(activeText.position, resolution.width, resolution.height)}
-                            onChange={pos => handlePositionChange(pos)}
-                            width={resolution.width}
-                            height={resolution.height}
-                            className="max-w-[140px] max-h-[140px]"
-                        />
+                        {/* Position Control UI removed as per edit hint */}
                     </div>
                 </aside>
             </div>
