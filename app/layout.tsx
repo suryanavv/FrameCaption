@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { onest } from "@/components/fonts";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "POVImage - Text Behind Image Editor",
@@ -34,6 +36,8 @@ export default function RootLayout({
             </main>
           </div>
         </ThemeProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
