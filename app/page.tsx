@@ -9,12 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, WandSparklesIcon, Type } from 'lucide-react';
+import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type } from 'lucide-react';
 import { removeImageBackground } from '@/lib/backgroundRemoval';
 import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { PositionControl } from "@/components/ui/position-control";
 import { Toaster } from "@/components/ui/sonner";
 import { Separator } from "@/components/ui/separator";
 import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono, roboto, openSans, lato, merriweather, playfairDisplay, rubik, nunito, oswald, raleway, ptSerif, cabin, quicksand, firaMono, jetbrainsMono } from "@/components/fonts";
@@ -94,7 +92,7 @@ function measureText(ctx: CanvasRenderingContext2D, text: string, font: string, 
     ctx.font = `${fontWeight} ${fontSize}px ${font}`;
     const lines = text.split('\n');
     let maxWidth = 0;
-    for (let line of lines) {
+    for (const line of lines) {
         let width = 0;
         if (letterSpacing) {
             for (const char of line) {
@@ -269,7 +267,6 @@ export default function EditorPage() {
     };
 
     const activeText = texts[activeTextIndex];
-    const resolution = originalImage ? { width: originalImage.width, height: originalImage.height } : { width: 1000, height: 1000 };
     const maxX = originalImage ? originalImage.width : 1000;
     const maxY = originalImage ? originalImage.height : 1000;
 
@@ -337,8 +334,6 @@ export default function EditorPage() {
                 resetTextEdits={resetTextEdits}
                 tryAnotherImage={tryAnotherImage}
                 activeText={activeText}
-                maxX={maxX}
-                maxY={maxY}
                 loading={loading}
                 setLoading={setLoading}
             />

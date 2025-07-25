@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, Move, X, Sun, Moon, MonitorSmartphone } from 'lucide-react';
-import { removeImageBackground } from '@/lib/backgroundRemoval';
+import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, Sun, Moon, MonitorSmartphone } from 'lucide-react';
 import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
@@ -16,7 +15,6 @@ import { Separator } from "@/components/ui/separator";
 import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono, roboto, openSans, lato, merriweather, playfairDisplay, rubik, nunito, oswald, raleway, ptSerif, cabin, quicksand, firaMono, jetbrainsMono } from "@/components/fonts";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
-import VaulDrawer from "@/components/ui/drawer";
 import { useTheme } from "next-themes";
 
 // Onest is now the global app font
@@ -53,24 +51,6 @@ const googleFonts = [
     { label: "JetBrains Mono", value: "JetBrains Mono", className: jetbrainsMono.variable },
 ];
 
-const getCenterPosition = (img?: HTMLImageElement) => ({
-    x: (img?.width ?? 1000) / 2,
-    y: (img?.height ?? 1000) / 2,
-});
-
-const defaultTextSettings: TextSettings = {
-    font: 'Montserrat',
-    fontSize: 100,
-    fontWeight: '400',
-    color: '#000000',
-    content: 'Your Text Here',
-    position: getCenterPosition(),
-    opacity: 1,
-    letterSpacing: 0,
-    lineHeight: 1.2,
-    alignment: 'start'
-};
-
 interface MobileEditorProps {
     image: File | null;
     setImage: React.Dispatch<React.SetStateAction<File | null>>;
@@ -103,8 +83,6 @@ interface MobileEditorProps {
     resetTextEdits: () => void;
     tryAnotherImage: () => void;
     activeText: TextSettings;
-    maxX: number;
-    maxY: number;
     loading: boolean;
     setLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -115,7 +93,7 @@ function measureText(ctx: CanvasRenderingContext2D, text: string, font: string, 
     ctx.font = `${fontWeight} ${fontSize}px ${font}`;
     const lines = text.split('\n');
     let maxWidth = 0;
-    for (let line of lines) {
+    for (const line of lines) {
         let width = 0;
         if (letterSpacing) {
             for (const char of line) {
@@ -139,7 +117,7 @@ export default function MobileEditor(props: MobileEditorProps) {
         bgContrast, setBgContrast, fgBrightness, setFgBrightness, fgContrast, setFgContrast,
         activeTab, setActiveTab, canvasRef, handleImageUpload, drawCanvas, handleTextChange,
         addText, deleteText, downloadImage, resetImageEdits, resetTextEdits,
-        tryAnotherImage, activeText, maxX, maxY, loading, setLoading
+        tryAnotherImage, activeText, loading, setLoading
     } = props;
 
     const [themeDrawerOpen, setThemeDrawerOpen] = useState(false);
@@ -163,40 +141,30 @@ export default function MobileEditor(props: MobileEditorProps) {
     // Remove any useState for sliderX/sliderY and any references to setSliderX/setSliderY. Only use activeText.sliderX and handleTextChange('sliderX', val).
 
     // Rename the local drawCanvas function to localDrawCanvas
-    const localDrawCanvas = () => {
-        const canvas = canvasRef.current;
-        if (!canvas || !originalImage || !foregroundImage) return;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        canvas.width = originalImage.width;
-        canvas.height = originalImage.height;
-
-        // Draw background
-        ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%)`;
-        ctx.drawImage(originalImage, 0, 0);
-        ctx.filter = 'none';
-
-        // Draw texts (centered)
-        // In localDrawCanvas, do not subtract half the text width/height from t.position. Use t.position.x and t.position.y directly.
-        const centeredTexts = texts.map((t, i) => ({
-            ...t,
-            position: {
-                x: t.position.x,
-                y: t.position.y
-            }
-        }));
-        addTextToCanvas(ctx, centeredTexts, activeTextIndex);
-
-        // Draw foreground
-        ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
-        ctx.drawImage(foregroundImage, 0, 0);
-        ctx.filter = 'none';
-    };
-
-    // Update all references to drawCanvas() within this file to localDrawCanvas()
+    // In the useEffect that calls localDrawCanvas, move the function definition inside the effect.
     useEffect(() => {
+        const localDrawCanvas = () => {
+            const canvas = canvasRef.current;
+            if (!canvas || !originalImage || !foregroundImage) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            canvas.width = originalImage.width;
+            canvas.height = originalImage.height;
+            ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%)`;
+            ctx.drawImage(originalImage, 0, 0);
+            ctx.filter = 'none';
+            const centeredTexts = texts.map((t) => ({
+                ...t,
+                position: {
+                    x: t.position.x,
+                    y: t.position.y
+                }
+            }));
+            addTextToCanvas(ctx, centeredTexts, activeTextIndex);
+            ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
+            ctx.drawImage(foregroundImage, 0, 0);
+            ctx.filter = 'none';
+        };
         localDrawCanvas();
     }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast, activeTextIndex]);
 
@@ -206,8 +174,6 @@ export default function MobileEditor(props: MobileEditorProps) {
         window.addEventListener('resize', check);
         return () => window.removeEventListener('resize', check);
     }, []);
-
-    const resolution = originalImage ? { width: originalImage.width, height: originalImage.height } : { width: 1000, height: 1000 };
 
     // Create a ref for a hidden canvas for measuring
     const measureCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -234,8 +200,6 @@ export default function MobileEditor(props: MobileEditorProps) {
         if (!originalImage) return;
         const width = originalImage.width;
         const height = originalImage.height;
-        const pixels_per_unit_X = width / 200;
-        const pixels_per_unit_Y = height / 200;
         const pixel_offset_X = activeText.position.x - (width / 2);
         const pixel_offset_Y = activeText.position.y - (height / 2);
         const target_x = (width / 2) + pixel_offset_X;

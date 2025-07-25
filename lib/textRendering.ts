@@ -30,7 +30,7 @@ export interface TextSettings {
       const settings = layers[i];
       const {
         font, fontSize, fontWeight = 'normal', color, content, position,
-        alignment = 'start', rotation = 0,
+        rotation = 0,
         shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY,
         strokeColor, strokeWidth,
         opacity = 1,
@@ -51,7 +51,18 @@ export interface TextSettings {
       // Letter spacing and line height
       const lines = content.split('\n');
       let maxWidth = 0;
-      let totalHeight = lines.length * fontSize * lineHeight;
+      const maxLineWidth = lines.reduce((acc, line) => {
+        let lineWidth = 0;
+        if (letterSpacing) {
+          for (const char of line) {
+            lineWidth += ctx.measureText(char).width + letterSpacing;
+          }
+        } else {
+          lineWidth = ctx.measureText(line).width;
+        }
+        return Math.max(acc, lineWidth);
+      }, 0);
+      const totalHeight = lines.length * fontSize * lineHeight;
       // Calculate bounding box for indicator
       for (let j = 0; j < lines.length; j++) {
         let lineWidth = 0;
@@ -95,8 +106,8 @@ export interface TextSettings {
         ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
         ctx.globalAlpha = 1;
         // Calculate top-left in canvas coordinates for center alignment
-        let boxX = position.x - maxWidth / 2;
-        let boxY = position.y - totalHeight / 2;
+        const boxX = position.x - maxWidth / 2;
+        const boxY = position.y - totalHeight / 2;
         // Draw semi-transparent fill
         ctx.fillStyle = 'rgba(255,255,255,0.08)';
         ctx.strokeStyle = 'rgba(255,255,255,0.5)';
