@@ -195,16 +195,17 @@ export default function MobileEditor(props: MobileEditorProps) {
         );
     }
 
-    // Add effect to map slider values to pixel positions and update activeText.position
+    // Remove debounce logic from the effect that updates text position from sliderX/sliderY.
     useEffect(() => {
         if (!originalImage) return;
         const width = originalImage.width;
         const height = originalImage.height;
-        const pixel_offset_X = activeText.position.x - (width / 2);
-        const pixel_offset_Y = activeText.position.y - (height / 2);
+        const pixels_per_unit_X = width / 200;
+        const pixels_per_unit_Y = height / 200;
+        const pixel_offset_X = (activeText.sliderX ?? 0) * pixels_per_unit_X;
+        const pixel_offset_Y = (activeText.sliderY ?? 0) * pixels_per_unit_Y;
         const target_x = (width / 2) + pixel_offset_X;
         const target_y = (height / 2) + pixel_offset_Y;
-        // Update activeText position
         setTexts(prev => {
             const newTexts = [...prev];
             newTexts[activeTextIndex] = {
@@ -213,8 +214,7 @@ export default function MobileEditor(props: MobileEditorProps) {
             };
             return newTexts;
         });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTextIndex]);
+    }, [activeText.sliderX, activeText.sliderY, activeTextIndex, originalImage?.width, originalImage?.height]);
 
     // Remove calculation of textBox, canvasCenterX, canvasCenterY, rangeX, rangeY, offsetX, offsetY, horizontalPercent, verticalPercent, handleHorizontalSlider, handleVerticalSlider, and all JSX for horizontal/vertical position sliders.
 
@@ -451,16 +451,16 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             <Label className="text-xs text-muted-foreground mb-1">Text Position</Label>
                                             <Slider
                                                 label="Horizontal (X)"
-                                                value={[activeText.position.x]}
-                                                onValueChange={([val]) => handleTextChange('position', { ...activeText.position, x: val })}
+                                                value={[activeText.sliderX ?? 0]}
+                                                onValueChange={([val]) => handleTextChange('sliderX', val)}
                                                 min={-100}
                                                 max={100}
                                                 step={1}
                                             />
                                             <Slider
                                                 label="Vertical (Y)"
-                                                value={[activeText.position.y]}
-                                                onValueChange={([val]) => handleTextChange('position', { ...activeText.position, y: val })}
+                                                value={[activeText.sliderY ?? 0]}
+                                                onValueChange={([val]) => handleTextChange('sliderY', val)}
                                                 min={-100}
                                                 max={100}
                                                 step={1}

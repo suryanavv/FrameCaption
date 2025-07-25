@@ -133,6 +133,9 @@ export default function EditorPage() {
     // Create a ref for a hidden canvas for measuring
     const measureCanvasRef = useRef<HTMLCanvasElement>(null);
 
+    // Add a ref for debounce timeout
+    const positionDebounceRef = useRef<NodeJS.Timeout | null>(null);
+
     // Helper to get text bounding box for activeText
     function getActiveTextBox() {
         const canvas = measureCanvasRef.current;
@@ -287,7 +290,6 @@ export default function EditorPage() {
         const pixel_offset_Y = (activeText.sliderY ?? 0) * pixels_per_unit_Y;
         const target_x = (width / 2) + pixel_offset_X;
         const target_y = (height / 2) + pixel_offset_Y;
-        // Update activeText position
         setTexts(prev => {
             const newTexts = [...prev];
             newTexts[activeTextIndex] = {
