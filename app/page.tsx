@@ -92,6 +92,7 @@ export default function EditorPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isMobile, setIsMobile] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [downloadFilename, setDownloadFilename] = useState('povimage.png');
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 1024);
         check();
@@ -105,6 +106,7 @@ export default function EditorPage() {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             setImage(file);
+            setDownloadFilename(file.name.replace(/\.[^/.]+$/, '') + '.png');
 
             const img = document.createElement('img') as HTMLImageElement;
             img.src = URL.createObjectURL(file);
@@ -189,7 +191,7 @@ export default function EditorPage() {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const link = document.createElement('a');
-        link.download = 'text-behind-image.png';
+        link.download = downloadFilename;
         link.href = canvas.toDataURL('image/png');
         link.click();
     };
@@ -215,6 +217,7 @@ export default function EditorPage() {
         setTexts([{ ...defaultTextSettings, position: getCenterPosition() }]);
         setActiveTextIndex(0);
         resetImageEdits();
+        setDownloadFilename('povimage.png');
     };
 
     const activeText = texts[activeTextIndex];
@@ -304,14 +307,14 @@ export default function EditorPage() {
                         <TabsList className="w-full flex items-center gap-1 h-8 lg:h-10">
                             <TabsTrigger
                                 value={"text"}
-                                className="flex-1 text-xs border border-primary/20 p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0"
+                                className="flex-1 text-xs border border-primary/20 p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 cursor-pointer"
                             >
                                 <Type className="w-2.5 h-2.5" />
                                 <span className="text-[0.625rem]">Text</span>
                             </TabsTrigger>
                             <TabsTrigger
                                 value={"image"}
-                                className="flex-1 text-xs border border-primary/20 p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0"
+                                className="flex-1 text-xs border border-primary/20 p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 cursor-pointer"
                             >
                                 <ImageIcon className="w-2.5 h-2.5" />
                                 <span className="text-[0.625rem]">Image</span>
@@ -603,12 +606,26 @@ export default function EditorPage() {
 
                 {/* Right Sidebar - Position Control (Desktop only) */}
                 <aside className="hidden lg:flex flex-col gap-2 w-full max-w-full lg:max-w-[205px] h-auto lg:h-full overflow-visible lg:overflow-hidden order-3">
-                    <div className="h-10 w-full">
+                    <div className="h-10 w-full bg-secondary/50 rounded-2xl flex items-center justify-center border border-primary/10">
                         <ThemeSwitch />
                     </div>
-                    <div className="flex flex-col gap-2 w-full bg-secondary rounded-2xl p-4 border border-primary/10">
-                        {/* Position Control UI removed as per edit hint */}
-                    </div>
+                    {/* <div className="flex flex-col gap-2 w-full bg-secondary/50 rounded-2xl p-4 border border-primary/10"> */}
+                        {/* Filename display and edit */}
+                        {/* {image && ( */}
+                            <div className="flex flex-col gap-2 w-full bg-secondary/50 rounded-2xl p-4 border border-primary/10">
+                            <div className="mb-2">
+                                <label className="block text-xs text-muted-foreground mb-1">Filename</label>
+                                <input
+                                    type="text"
+                                    className="w-full rounded border px-2 py-1 text-xs bg-background border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                    value={downloadFilename.replace(/\.png$/, '')}
+                                    onChange={e => setDownloadFilename(e.target.value.replace(/\.[^/.]+$/, '') + '.png')}
+                                />
+                                <span className="block text-[10px] text-muted-foreground mt-1">.png</span>
+                            </div>
+                            </div>
+                        {/* )} */}
+                    {/* </div> */}
                 </aside>
             </div>
 
