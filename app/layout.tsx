@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import SplashScreen from "@/components/SplashScreen";
 
 export const metadata: Metadata = {
   title: "POVImage - Text Behind Image Editor",
@@ -30,11 +31,13 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
-            <main className="flex-1 w-full max-w-full overflow-x-hidden overflow-y-auto">
-              {children}
-            </main>
-          </div>
+          <SplashScreen>
+            <div className="flex flex-col min-h-screen w-full max-w-full overflow-x-hidden">
+              <main className="flex-1 w-full max-w-full overflow-x-hidden overflow-y-auto">
+                {children}
+              </main>
+            </div>
+          </SplashScreen>
         </ThemeProvider>
         <Analytics />
         <SpeedInsights />
