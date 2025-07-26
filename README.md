@@ -25,8 +25,8 @@ A modern web application for creating stunning images with text overlays. Add pr
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/suryanavv/framecaption.git
-cd framecaption
+git clone https://github.com/suryanavv/FrameCaption.git
+cd FrameCaption
 ```
 
 2. Install dependencies:
@@ -157,8 +157,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/suryanavv/framecaption/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/suryanavv/framecaption/discussions)
+- **Issues**: [GitHub Issues](https://github.com/suryanavv/FrameCaption/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/suryanavv/FrameCaption/discussions)
 - **Email**: support@framecaption.com
 
 ---
