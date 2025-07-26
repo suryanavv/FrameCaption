@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type } from 'lucide-react';
+import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, GripVertical } from 'lucide-react';
 import { removeImageBackground } from '@/lib/backgroundRemoval';
 import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -93,6 +93,8 @@ export default function EditorPage() {
     const [isMobile, setIsMobile] = useState(false);
     const [loading, setLoading] = useState(false);
     const [downloadFilename, setDownloadFilename] = useState('povimage.png');
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 1024);
         check();
@@ -241,6 +243,47 @@ export default function EditorPage() {
         });
     }, [activeText.sliderX, activeText.sliderY, activeTextIndex, originalImage?.width, originalImage?.height]);
 
+    // Drag and drop handlers
+    const handleDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedIndex(index);
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', index.toString());
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        setDragOverIndex(index);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        setDragOverIndex(null);
+    };
+
+    const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+        e.preventDefault();
+        if (draggedIndex === null || draggedIndex === dropIndex) {
+            setDraggedIndex(null);
+            setDragOverIndex(null);
+            return;
+        }
+
+        const newTexts = [...texts];
+        const draggedText = newTexts[draggedIndex];
+        newTexts.splice(draggedIndex, 1);
+        newTexts.splice(dropIndex, 0, draggedText);
+        
+        setTexts(newTexts);
+        setActiveTextIndex(dropIndex);
+        setDraggedIndex(null);
+        setDragOverIndex(null);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null);
+        setDragOverIndex(null);
+    };
+
     // Only branch on rendering, not on hooks
     if (isMobile) {
         return (
@@ -335,14 +378,39 @@ export default function EditorPage() {
                                             </Button>
                                         </div>
                                         <div className="space-y-1">
-                                            {texts.map((text, index) => (
-                                                <div key={index} className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${activeTextIndex === index ? 'bg-primary/10' : 'hover:bg-primary/5'}`} onClick={() => setActiveTextIndex(index)}>
-                                                    <span className="truncate text-xs" style={{ fontFamily: text.font }}>{text.content}</span>
-                                                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteText(index) }} className="h-5 w-5">
-                                                        <Trash2 className="w-3 h-3" />
-                                                    </Button>
-                                                </div>
-                                            ))}
+                                            {texts.slice().reverse().map((text, index) => {
+                                                const originalIndex = texts.length - 1 - index;
+                                                return (
+                                                    <div 
+                                                        key={originalIndex} 
+                                                        draggable
+                                                        onDragStart={(e) => handleDragStart(e, originalIndex)}
+                                                        onDragOver={(e) => handleDragOver(e, originalIndex)}
+                                                        onDragLeave={handleDragLeave}
+                                                        onDrop={(e) => handleDrop(e, originalIndex)}
+                                                        onDragEnd={handleDragEnd}
+                                                        className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${
+                                                            activeTextIndex === originalIndex ? 'bg-primary/10' : 'hover:bg-primary/5'
+                                                        } ${
+                                                            draggedIndex === originalIndex ? 'opacity-50' : ''
+                                                        } ${
+                                                            dragOverIndex === originalIndex ? 'border-2 border-primary/50 bg-primary/5' : ''
+                                                        }`} 
+                                                        onClick={() => setActiveTextIndex(originalIndex)}
+                                                    >
+                                                        <div className="flex items-center gap-1">
+                                                            {/* Desktop: show grip and up/down buttons */}
+                                                            <span className="hidden lg:inline-flex items-center cursor-grab mr-1 select-none"><GripVertical className="w-4 h-4 opacity-60" /></span>
+                                                            <span className="truncate text-xs" style={{ fontFamily: text.font }}>{text.content}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteText(originalIndex) }} className="h-5 w-5">
+                                                                <Trash2 className="w-3 h-3" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </div>
 

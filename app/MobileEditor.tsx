@@ -103,6 +103,24 @@ export default function MobileEditor(props: MobileEditorProps) {
     const [themeDrawerOpen, setThemeDrawerOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const { theme } = useTheme();
+
+    // Add moveTextLayerUp and moveTextLayerDown functions for mobile
+    const moveTextLayerUp = (index: number) => {
+        if (index <= 0) return;
+        const newTexts = [...texts];
+        [newTexts[index - 1], newTexts[index]] = [newTexts[index], newTexts[index - 1]];
+        setTexts(newTexts);
+        setActiveTextIndex(index - 1);
+    };
+
+    const moveTextLayerDown = (index: number) => {
+        if (index >= texts.length - 1) return;
+        const newTexts = [...texts];
+        [newTexts[index], newTexts[index + 1]] = [newTexts[index + 1], newTexts[index]];
+        setTexts(newTexts);
+        setActiveTextIndex(index + 1);
+    };
+
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         document.documentElement.style.overflow = 'hidden';
@@ -285,14 +303,26 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 </Button>
                                             </div>
                                             <div className="space-y-1">
-                                                {texts.map((text, index) => (
-                                                    <div key={index} className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${activeTextIndex === index ? 'bg-primary/10' : 'hover:bg-primary/5'}`} onClick={() => setActiveTextIndex(index)}>
-                                                        <span className="truncate text-xs" style={{ fontFamily: text.font }}>{text.content}</span>
-                                                        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteText(index) }} className="h-5 w-5">
-                                                            <Trash2 className="w-3 h-3" />
-                                                        </Button>
-                                                    </div>
-                                                ))}
+                                                {texts.slice().reverse().map((text, index) => {
+                                                    const originalIndex = texts.length - 1 - index;
+                                                    return (
+                                                        <div key={originalIndex} className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${activeTextIndex === originalIndex ? 'bg-primary/10' : 'hover:bg-primary/5'}`} onClick={() => setActiveTextIndex(originalIndex)}>
+                                                            <span className="truncate text-xs" style={{ fontFamily: text.font }}>{text.content}</span>
+                                                            <div className="flex items-center gap-1">
+                                                                {/* Mobile: Up/Down controls (fixed for reversed order) */}
+                                                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={e => { e.stopPropagation(); moveTextLayerDown(originalIndex); }} disabled={originalIndex === texts.length - 1} aria-label="Move up">
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"/></svg>
+                                                                </Button>
+                                                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={e => { e.stopPropagation(); moveTextLayerUp(originalIndex); }} disabled={originalIndex === 0} aria-label="Move down">
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+                                                                </Button>
+                                                                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteText(originalIndex) }} className="h-5 w-5">
+                                                                    <Trash2 className="w-3 h-3" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
                                             </div>
                                         </div>
 

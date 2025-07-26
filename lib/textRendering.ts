@@ -107,13 +107,11 @@ export interface TextSettings {
         // Calculate top-left in canvas coordinates for center alignment
         const boxX = position.x - maxWidth / 2;
         const boxY = position.y - totalHeight / 2;
-        // Draw semi-transparent fill
-        ctx.fillStyle = 'rgba(255,255,255,0.08)';
+        // Draw only border, no fill
         ctx.strokeStyle = 'rgba(255,255,255,0.5)';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.roundRect(boxX - 6, boxY - 6, maxWidth + 12, totalHeight + 12, 8);
-        ctx.fill();
         ctx.shadowColor = 'rgba(0,0,0,0.10)';
         ctx.shadowBlur = 4;
         ctx.stroke();
