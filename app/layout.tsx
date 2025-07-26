@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { onest } from "@/components/fonts";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Analytics } from "@vercel/analytics/next";
@@ -20,10 +19,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-        <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body
-        className={`${onest.variable} antialiased min-h-screen bg-background`}
+        className="font-onest antialiased min-h-screen bg-background"
       >
         <ThemeProvider
           attribute="class"

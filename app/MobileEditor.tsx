@@ -12,43 +12,57 @@ import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { Separator } from "@/components/ui/separator";
-import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono, roboto, openSans, lato, merriweather, playfairDisplay, rubik, nunito, oswald, raleway, ptSerif, cabin, quicksand, firaMono, jetbrainsMono } from "@/components/fonts";
+import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono, roboto, openSans, lato, merriweather, playfairDisplay, rubik, nunito, oswald, raleway, ptSerif, cabin, quicksand, firaMono, jetbrainsMono, dancingScript, pacifico, caveat, satisfy, indieFlower, greatVibes, shadowsIntoLight } from "@/components/fonts";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
 import { useTheme } from "next-themes";
 
 // Onest is now the global app font
 const googleFonts = [
-    { label: "Poppins", value: "Poppins", className: poppins.variable },
+    // Sans-serif fonts
+    { label: "Bricolage Grotesque", value: "Bricolage Grotesque", className: bricolage.variable },
+    { label: "Funnel Display", value: "Funnel Display", className: funnelDisplay.variable },
+    { label: "Funnel Sans", value: "Funnel Sans", className: funnelSans.variable },
+    { label: "Geist", value: "Geist", className: geist.variable },
     { label: "Inter", value: "Inter", className: inter.variable },
+    { label: "Lato", value: "Lato", className: lato.variable },
     { label: "Manrope", value: "Manrope", className: manrope.variable },
     { label: "Montserrat", value: "Montserrat", className: montserrat.variable },
-    { label: "Geist", value: "Geist", className: geist.variable },
-    { label: "Bricolage Grotesque", value: "Bricolage Grotesque", className: bricolage.variable },
-    { label: "Funnel Sans", value: "Funnel Sans", className: funnelSans.variable },
-    { label: "Funnel Display", value: "Funnel Display", className: funnelDisplay.variable },
+    { label: "Nunito", value: "Nunito", className: nunito.variable },
     { label: "Onest", value: "Onest", className: onest.variable },
+    { label: "Open Sans", value: "Open Sans", className: openSans.variable },
+    { label: "Oswald", value: "Oswald", className: oswald.variable },
+    { label: "Poppins", value: "Poppins", className: poppins.variable },
+    { label: "Quicksand", value: "Quicksand", className: quicksand.variable },
+    { label: "Raleway", value: "Raleway", className: raleway.variable },
+    { label: "Roboto", value: "Roboto", className: roboto.variable },
+    { label: "Rubik", value: "Rubik", className: rubik.variable },
     { label: "Space Grotesk", value: "Space Grotesk", className: spaceGrotesk.variable },
+    
+    // Serif fonts
+    { label: "Cabin", value: "Cabin", className: cabin.variable },
     { label: "DM Serif Display", value: "DM Serif Display", className: dmSerifDisplay.variable },
     { label: "Instrument Serif", value: "Instrument Serif", className: instrumentSerif.variable },
     { label: "Lora", value: "Lora", className: lora.variable },
-    { label: "Ms Madi", value: "Ms Madi", className: msMadi.variable },
-    { label: "Geist Mono", value: "Geist Mono", className: geistMono.variable },
-    { label: "Space Mono", value: "Space Mono", className: spaceMono.variable },
-    { label: "Roboto", value: "Roboto", className: roboto.variable },
-    { label: "Open Sans", value: "Open Sans", className: openSans.variable },
-    { label: "Lato", value: "Lato", className: lato.variable },
     { label: "Merriweather", value: "Merriweather", className: merriweather.variable },
+    { label: "Ms Madi", value: "Ms Madi", className: msMadi.variable },
     { label: "Playfair Display", value: "Playfair Display", className: playfairDisplay.variable },
-    { label: "Rubik", value: "Rubik", className: rubik.variable },
-    { label: "Nunito", value: "Nunito", className: nunito.variable },
-    { label: "Oswald", value: "Oswald", className: oswald.variable },
-    { label: "Raleway", value: "Raleway", className: raleway.variable },
     { label: "PT Serif", value: "PT Serif", className: ptSerif.variable },
-    { label: "Cabin", value: "Cabin", className: cabin.variable },
-    { label: "Quicksand", value: "Quicksand", className: quicksand.variable },
+    
+    // Monospace fonts
     { label: "Fira Mono", value: "Fira Mono", className: firaMono.variable },
+    { label: "Geist Mono", value: "Geist Mono", className: geistMono.variable },
     { label: "JetBrains Mono", value: "JetBrains Mono", className: jetbrainsMono.variable },
+    { label: "Space Mono", value: "Space Mono", className: spaceMono.variable },
+    
+    // Handwritten/Script fonts
+    { label: "Caveat", value: "Caveat", className: caveat.variable },
+    { label: "Dancing Script", value: "Dancing Script", className: dancingScript.variable },
+    { label: "Great Vibes", value: "Great Vibes", className: greatVibes.variable },
+    { label: "Indie Flower", value: "Indie Flower", className: indieFlower.variable },
+    { label: "Pacifico", value: "Pacifico", className: pacifico.variable },
+    { label: "Satisfy", value: "Satisfy", className: satisfy.variable },
+    { label: "Shadows Into Light", value: "Shadows Into Light", className: shadowsIntoLight.variable },
 ];
 
 interface MobileEditorProps {

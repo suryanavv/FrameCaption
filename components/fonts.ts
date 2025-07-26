@@ -31,6 +31,14 @@ import {
   Quicksand,
   Fira_Mono,
   JetBrains_Mono,
+  // Handwritten/Script fonts
+  Dancing_Script,
+  Pacifico,
+  Caveat,
+  Satisfy,
+  Indie_Flower,
+  Great_Vibes,
+  Shadows_Into_Light,
 } from "next/font/google";
 
 // Sans-serif fonts
@@ -211,5 +219,49 @@ export const firaMono = Fira_Mono({
 export const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-jetbrains-mono",
+  display: 'swap',
+});
+
+// Handwritten/Script fonts
+export const dancingScript = Dancing_Script({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-dancing-script",
+  display: 'swap',
+});
+export const pacifico = Pacifico({
+  weight: ["400"],
+  subsets: ["latin"],
+  variable: "--font-pacifico",
+  display: 'swap',
+});
+export const caveat = Caveat({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-caveat",
+  display: 'swap',
+});
+export const satisfy = Satisfy({
+  weight: ["400"],
+  subsets: ["latin"],
+  variable: "--font-satisfy",
+  display: 'swap',
+});
+export const indieFlower = Indie_Flower({
+  weight: ["400"],
+  subsets: ["latin"],
+  variable: "--font-indie-flower",
+  display: 'swap',
+});
+export const greatVibes = Great_Vibes({
+  weight: ["400"],
+  subsets: ["latin"],
+  variable: "--font-great-vibes",
+  display: 'swap',
+});
+export const shadowsIntoLight = Shadows_Into_Light({
+  weight: ["400"],
+  subsets: ["latin"],
+  variable: "--font-shadows-into-light",
   display: 'swap',
 });
