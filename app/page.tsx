@@ -92,7 +92,7 @@ export default function EditorPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isMobile, setIsMobile] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [downloadFilename, setDownloadFilename] = useState('povimage.png');
+    const [downloadFilename, setDownloadFilename] = useState('framecaption.png');
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
     useEffect(() => {
@@ -219,7 +219,7 @@ export default function EditorPage() {
         setTexts([{ ...defaultTextSettings, position: getCenterPosition() }]);
         setActiveTextIndex(0);
         resetImageEdits();
-        setDownloadFilename('povimage.png');
+        setDownloadFilename('framecaption.png');
     };
 
     const activeText = texts[activeTextIndex];
@@ -331,8 +331,8 @@ export default function EditorPage() {
             {/* Mobile Top Header */}
             <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-secondary/80 backdrop-blur-md rounded-xl border border-primary/10 w-full max-w-full sm:max-w-[320px] lg:max-w-[240px] mx-auto mb-2 lg:hidden">
                 <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
-                    <Image src="/icon.svg" alt="POVImage" width={20} height={20} />
-                    POVImage
+                    <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
+                    FrameCaption
                 </h1>
             </header>
             {/* Responsive Layout with Image */}
@@ -342,8 +342,8 @@ export default function EditorPage() {
                     {/* Desktop Sidebar Header */}
                     <header className="hidden lg:flex h-10 items-center justify-center bg-secondary backdrop-blur-md rounded-xl border border-primary/10 w-full max-w-full sm:max-w-[320px] lg:max-w-[240px] mx-auto">
                         <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
-                            <Image src="/icon.svg" alt="POVImage" width={20} height={20} />
-                            POVImage
+                            <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
+                            FrameCaption
                         </h1>
                     </header>
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "text" | "image")} className="flex flex-col items-center w-full">

@@ -207,8 +207,8 @@ export default function MobileEditor(props: MobileEditorProps) {
             <div className="p-2">
                 <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-secondary/50 backdrop-blur-md rounded-2xl overflow-hidden border-b border-primary/10 w-full max-w-full mx-auto relative">
                     <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
-                        <Image src="/icon.svg" alt="POVImage" width={20} height={20} />
-                        POVImage
+                        <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
+                        FrameCaption
                     </h1>
                     {isMobile && (
                         <button

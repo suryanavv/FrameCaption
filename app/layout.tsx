@@ -7,8 +7,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import SplashScreen from "@/components/SplashScreen";
 
 export const metadata: Metadata = {
-  title: "POVImage - Text Behind Image Editor",
-  description: "Create stunning images with text behind the main subject. All in your browser.",
+  title: "FrameCaption - Text Overlay Image Editor",
+  description: "Create stunning images with text overlays. Add captions, titles, and text elements to your photos with professional styling.",
 };
 
 export default function RootLayout({

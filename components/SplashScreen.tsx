@@ -62,13 +62,10 @@ export default function SplashScreen({ children }: SplashScreenProps) {
             <div className="w-24 h-24 relative flex items-center justify-center">
               <Image
                 src="/icon.svg"
-                alt="POVImage"
-                width={64}
-                height={64}
-                // className={cn(
-                //   "transition-all duration-1000 animate-logo-float z-10",
-                //   isLoading ? "scale-100 rotate-0" : "scale-110 rotate-12"
-                // )}
+                alt="FrameCaption"
+                width={48}
+                height={48}
+                className="animate-pulse"
               />
               {/* Pulse ring animation */}
               <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping" />
@@ -78,11 +75,11 @@ export default function SplashScreen({ children }: SplashScreenProps) {
 
           {/* App name */}
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent animate-text-glow">
-              POVImage
+            <h1 className="text-2xl font-bold text-center animate-fade-in">
+              FrameCaption
             </h1>
             <p className="text-sm text-muted-foreground">
-              Text Behind Image Editor
+              Add beautiful text overlays to your images
             </p>
           </div>
 

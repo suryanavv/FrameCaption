@@ -1,9 +1,46 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FrameCaption
 
-## Getting Started
+A modern web application for creating stunning images with text overlays. Add professional captions, titles, and text elements to your photos with an intuitive drag-and-drop interface.
 
-First, run the development server:
+![FrameCaption](https://img.shields.io/badge/FrameCaption-Text%20Overlay%20Editor-blue?style=for-the-badge&logo=next.js)
 
+## ✨ Features
+
+- **Text Overlay Editor**: Add beautiful text overlays to your images with professional styling
+- **Layer Management**: Organize multiple text layers with drag-and-drop reordering
+- **Typography Controls**: Extensive font options, weights, colors, and spacing controls
+- **Image Adjustments**: Brightness and contrast controls for both background and foreground
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Real-time Preview**: See changes instantly as you edit
+- **Export Options**: Download high-quality PNG images with custom filenames
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18+ 
+- npm, yarn, pnpm, or bun
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/suryanavv/framecaption.git
+cd framecaption
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+# or
+bun install
+```
+
+3. Run the development server:
 ```bash
 npm run dev
 # or
@@ -14,23 +51,116 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📖 Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Adding Text Overlays
 
-## Learn More
+1. **Upload an Image**: Click the upload button or drag an image into the editor
+2. **Add Text Layers**: Use the "Add" button to create new text layers
+3. **Customize Text**: 
+   - Change content, font, size, and color
+   - Adjust opacity, letter spacing, and line height
+   - Position text using the X/Y sliders
+4. **Reorder Layers**: Drag layers to change stacking order or use up/down buttons on mobile
+5. **Export**: Download your finished image with a custom filename
 
-To learn more about Next.js, take a look at the following resources:
+### Advanced Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Layer Management**: Organize multiple text elements with intuitive controls
+- **Typography**: Choose from 30+ Google Fonts with full weight and style options
+- **Color Picker**: Use the color picker for precise color selection
+- **Image Adjustments**: Fine-tune brightness and contrast for perfect results
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🛠️ Tech Stack
 
-## Deploy on Vercel
+- **Framework**: [Next.js 14](https://nextjs.org/) with App Router
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) with custom design system
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com/) built on [Radix UI](https://www.radix-ui.com/) primitives
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Fonts**: Google Fonts integration
+- **Color Picker**: [React Colorful](https://react-colorful.com/)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📱 Responsive Design
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+FrameCaption is fully responsive and optimized for:
+- **Desktop**: Full-featured interface with drag-and-drop layer management
+- **Mobile**: Touch-optimized controls with up/down buttons for layer reordering
+- **Tablet**: Adaptive layout that works on all screen sizes
+
+## 🎨 Customization
+
+### Adding New Fonts
+
+Add new Google Fonts in `components/fonts.ts`:
+
+```typescript
+import { Inter } from 'next/font/google'
+
+export const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+})
+```
+
+### Styling
+
+The app uses a custom design system with:
+- CSS variables for theming
+- Tailwind CSS for utility classes
+- Custom component variants
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+
+The easiest way to deploy FrameCaption is using [Vercel](https://vercel.com):
+
+1. Push your code to GitHub
+2. Import your repository to Vercel
+3. Deploy with zero configuration
+
+### Other Platforms
+
+FrameCaption can be deployed to any platform that supports Next.js:
+
+- **Netlify**: Use the Next.js build preset
+- **Railway**: Connect your GitHub repository
+- **DigitalOcean App Platform**: Deploy with automatic scaling
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- [Next.js](https://nextjs.org/) for the amazing framework
+- [Tailwind CSS](https://tailwindcss.com/) for the utility-first CSS framework
+- [Radix UI](https://www.radix-ui.com/) for accessible UI primitives
+- [shadcn/ui](https://ui.shadcn.com/) for beautiful and customizable React components
+- [Lucide](https://lucide.dev/) for beautiful icons
+- [Google Fonts](https://fonts.google.com/) for typography
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/suryanavv/framecaption/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/suryanavv/framecaption/discussions)
+- **Email**: support@framecaption.com
+
+---
+
+Made with ❤️ by the FrameCaption team
