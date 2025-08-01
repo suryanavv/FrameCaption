@@ -2,6 +2,7 @@ export interface TextSettings {
     font: string;
     fontSize: number;
     fontWeight?: string | number; // Added fontWeight
+    fontStyle?: 'normal' | 'italic'; // Added fontStyle for italic
     color: string;
     content: string;
     position: { x: number; y: number };
@@ -18,6 +19,12 @@ export interface TextSettings {
     lineHeight?: number;
     sliderX?: number;
     sliderY?: number;
+    // Text shadow properties
+    textShadowEnabled?: boolean;
+    textShadowColor?: string;
+    textShadowOffsetX?: number;
+    textShadowOffsetY?: number;
+    textShadowBlur?: number;
   }
   
   export function addTextToCanvas(
@@ -30,16 +37,21 @@ export interface TextSettings {
     for (let i = 0; i < layers.length; i++) {
       const settings = layers[i];
       const {
-        font, fontSize, fontWeight = 'normal', color, content, position,
+        font, fontSize, fontWeight = 'normal', fontStyle = 'normal', color, content, position,
         rotation = 0,
         shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY,
         strokeColor, strokeWidth,
         opacity = 1,
         letterSpacing = 0,
         lineHeight = 1.2,
+        textShadowEnabled = false,
+        textShadowColor = '#000000',
+        textShadowOffsetX = 2,
+        textShadowOffsetY = 2,
+        textShadowBlur = 4,
       } = settings;
       ctx.save();
-      ctx.font = `${fontWeight} ${fontSize}px ${font}`;
+      ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${font}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.globalAlpha = opacity;
@@ -81,8 +93,22 @@ export interface TextSettings {
         let currentX = letterSpacing ? -lineWidth / 2 : 0;
         if (letterSpacing) {
           for (const char of lines[j]) {
+            // Draw text shadow if enabled
+            if (textShadowEnabled) {
+              ctx.save();
+              ctx.shadowColor = textShadowColor;
+              ctx.shadowBlur = textShadowBlur;
+              ctx.shadowOffsetX = textShadowOffsetX;
+              ctx.shadowOffsetY = textShadowOffsetY;
+              ctx.fillStyle = color;
+              ctx.fillText(char, currentX, y);
+              ctx.restore();
+            }
+            
+            // Draw main text
             ctx.fillStyle = color;
             ctx.fillText(char, currentX, y);
+            
             if (strokeColor && strokeWidth) {
               ctx.lineWidth = strokeWidth;
               ctx.strokeStyle = strokeColor;
@@ -91,8 +117,22 @@ export interface TextSettings {
             currentX += ctx.measureText(char).width + letterSpacing;
           }
         } else {
+          // Draw text shadow if enabled
+          if (textShadowEnabled) {
+            ctx.save();
+            ctx.shadowColor = textShadowColor;
+            ctx.shadowBlur = textShadowBlur;
+            ctx.shadowOffsetX = textShadowOffsetX;
+            ctx.shadowOffsetY = textShadowOffsetY;
+            ctx.fillStyle = color;
+            ctx.fillText(lines[j], 0, y);
+            ctx.restore();
+          }
+          
+          // Draw main text
           ctx.fillStyle = color;
           ctx.fillText(lines[j], 0, y);
+          
           if (strokeColor && strokeWidth) {
             ctx.lineWidth = strokeWidth;
             ctx.strokeStyle = strokeColor;

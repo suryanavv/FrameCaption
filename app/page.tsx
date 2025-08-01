@@ -9,12 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, GripVertical } from 'lucide-react';
+import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, GripVertical, Italic, Layers } from 'lucide-react';
 import { removeImageBackground } from '@/lib/backgroundRemoval';
 import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono, roboto, openSans, lato, merriweather, playfairDisplay, rubik, nunito, oswald, raleway, ptSerif, cabin, quicksand, firaMono, jetbrainsMono, dancingScript, pacifico, caveat, satisfy, indieFlower, greatVibes, shadowsIntoLight } from "@/components/fonts";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
@@ -78,6 +79,7 @@ const defaultTextSettings: TextSettings = {
     font: 'Poppins',
     fontSize: 100,
     fontWeight: '700', // Default to Bold
+    fontStyle: 'normal', // Default to normal (not italic)
     color: '#000000',
     content: 'Your Text Here',
     position: getCenterPosition(),
@@ -87,6 +89,12 @@ const defaultTextSettings: TextSettings = {
     alignment: 'start',
     sliderX: 0, // Add sliderX and sliderY to defaultTextSettings
     sliderY: 0,
+    // Text shadow defaults
+    textShadowEnabled: false,
+    textShadowColor: '#000000',
+    textShadowOffsetX: 2,
+    textShadowOffsetY: 2,
+    textShadowBlur: 4,
 };
 
 
@@ -497,28 +505,21 @@ export default function EditorPage() {
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    {/* Font Weight Selection */}
-                                    <div className="flex flex-col gap-2">
-                                        <Label className="text-xs text-muted-foreground">Font Weight</Label>
-                                        <Select value={activeText.fontWeight?.toString() ?? '700'} onValueChange={(value) => handleTextChange('fontWeight', value)}>
-                                            <SelectTrigger className="w-full h-9 text-xs">
-                                                <SelectValue placeholder="Select weight" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="100">100 Thin</SelectItem>
-                                                <SelectItem value="200">200 Extra Light</SelectItem>
-                                                <SelectItem value="300">300 Light</SelectItem>
-                                                <SelectItem value="400">400 Regular</SelectItem>
-                                                <SelectItem value="500">500 Medium</SelectItem>
-                                                <SelectItem value="600">600 Semi Bold</SelectItem>
-                                                <SelectItem value="700">700 Bold</SelectItem>
-                                                <SelectItem value="800">800 Extra Bold</SelectItem>
-                                                <SelectItem value="900">900 Black</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+
+
+                                    {/* Font Style Switch */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Italic className="w-4 h-4 text-muted-foreground" />
+                                            <Label className="text-xs text-muted-foreground">Italic</Label>
+                                        </div>
+                                        <Switch
+                                            checked={activeText.fontStyle === 'italic'}
+                                            onCheckedChange={(checked) => handleTextChange('fontStyle', checked ? 'italic' : 'normal')}
+                                        />
                                     </div>
 
-                                    {/* Color */}
+
                                     <div className="flex flex-col gap-2 w-full">
                                         <Label className="text-xs text-muted-foreground">Color</Label>
                                         <div className="flex items-center gap-2 w-full relative">
@@ -552,7 +553,15 @@ export default function EditorPage() {
                                     {/* Typography Controls */}
                                     <div className="flex flex-col gap-3">
                                         <Slider
-                                            label="Size"
+                                            label="Font Weight"
+                                            value={[parseInt(activeText.fontWeight?.toString() ?? '700')]}
+                                            onValueChange={([val]) => handleTextChange('fontWeight', val.toString())}
+                                            min={100}
+                                            max={900}
+                                            step={100}
+                                        />
+                                        <Slider
+                                            label="Font Size"
                                             value={[activeText.fontSize]}
                                             onValueChange={([val]) => handleTextChange('fontSize', val)}
                                             max={1000}
@@ -603,6 +612,84 @@ export default function EditorPage() {
                                                         step={1}
                                                     />
                                         </div>
+
+                                    {/* Text Shadow Section */}
+                                    <Separator />
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Layers className="w-4 h-4 text-muted-foreground" />
+                                                <Label className="text-xs text-muted-foreground">Text Shadow</Label>
+                                            </div>
+                                            <Switch
+                                                checked={activeText.textShadowEnabled ?? false}
+                                                onCheckedChange={(checked) => handleTextChange('textShadowEnabled', checked)}
+                                            />
+                                        </div>
+                                        
+                                        {activeText.textShadowEnabled && (
+                                            <>
+                                                {/* Shadow Color */}
+                                                <div className="flex flex-col gap-2">
+                                                    <Label className="text-xs text-muted-foreground">Shadow Color</Label>
+                                                    <div className="flex items-center gap-2 w-full relative">
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <span
+                                                                    className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-primary/10 absolute left-2 top-1/2 -translate-y-1/2"
+                                                                    style={{ backgroundColor: activeText.textShadowColor ?? '#000000' }}
+                                                                />
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-2" align="start">
+                                                                <HexColorPicker
+                                                                    color={activeText.textShadowColor ?? '#000000'}
+                                                                    onChange={(color) => handleTextChange('textShadowColor', color)}
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <Input
+                                                            className="pl-10 h-9 text-xs"
+                                                            type="text"
+                                                            value={(activeText.textShadowColor ?? '#000000').startsWith("#") ? (activeText.textShadowColor ?? '#000000') : `#${activeText.textShadowColor ?? '#000000'}`}
+                                                            placeholder="Shadow Color"
+                                                            onChange={(e) => {
+                                                                const color = e.target.value.startsWith("#") ? e.target.value : `#${e.target.value}`;
+                                                                handleTextChange('textShadowColor', color);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Shadow Position and Blur */}
+                                                <div className="flex flex-col gap-3">
+                                                    <Slider
+                                                        label="Shadow X Offset"
+                                                        value={[activeText.textShadowOffsetX ?? 2]}
+                                                        onValueChange={([val]) => handleTextChange('textShadowOffsetX', val)}
+                                                        min={-20}
+                                                        max={20}
+                                                        step={1}
+                                                    />
+                                                    <Slider
+                                                        label="Shadow Y Offset"
+                                                        value={[activeText.textShadowOffsetY ?? 2]}
+                                                        onValueChange={([val]) => handleTextChange('textShadowOffsetY', val)}
+                                                        min={-20}
+                                                        max={20}
+                                                        step={1}
+                                                    />
+                                                    <Slider
+                                                        label="Shadow Blur"
+                                                        value={[activeText.textShadowBlur ?? 4]}
+                                                        onValueChange={([val]) => handleTextChange('textShadowBlur', val)}
+                                                        min={0}
+                                                        max={20}
+                                                        step={1}
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
 
                                     <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-8 text-xs">
                                         <RefreshCw className="w-3 h-3 mr-1" />
