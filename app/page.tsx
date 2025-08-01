@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, GripVertical, Italic, Layers } from 'lucide-react';
+import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, GripVertical, Italic, Layers, MoveUp } from 'lucide-react';
 import { removeImageBackground } from '@/lib/backgroundRemoval';
 import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -95,6 +95,8 @@ const defaultTextSettings: TextSettings = {
     textShadowOffsetX: 2,
     textShadowOffsetY: 2,
     textShadowBlur: 4,
+    // Layer position default
+    onTop: false, // Default to behind foreground image
 };
 
 
@@ -171,21 +173,34 @@ export default function EditorPage() {
         ctx.drawImage(originalImage, 0, 0);
         ctx.filter = 'none';
 
-        // Draw texts (centered)
-        // Adjust position to be center
-        const centeredTexts = texts.map((t) => ({
+        // Separate texts by layer position
+        const behindTexts = texts.filter(t => !t.onTop);
+        const onTopTexts = texts.filter(t => t.onTop);
+
+        // Draw texts behind foreground
+        const centeredBehindTexts = behindTexts.map((t) => ({
             ...t,
             position: {
                 x: t.position.x,
                 y: t.position.y
             }
         }));
-        addTextToCanvas(ctx, centeredTexts, activeTextIndex, true); // Show border indicator for editing
+        addTextToCanvas(ctx, centeredBehindTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
 
         // Draw foreground
         ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
         ctx.drawImage(foregroundImage, 0, 0);
         ctx.filter = 'none';
+
+        // Draw texts on top of foreground
+        const centeredOnTopTexts = onTopTexts.map((t) => ({
+            ...t,
+            position: {
+                x: t.position.x,
+                y: t.position.y
+            }
+        }));
+        addTextToCanvas(ctx, centeredOnTopTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
     };
 
     // Separate function for export without border indicator
@@ -204,20 +219,34 @@ export default function EditorPage() {
         ctx.drawImage(originalImage, 0, 0);
         ctx.filter = 'none';
 
-        // Draw texts (centered) without border indicator
-        const centeredTexts = texts.map((t) => ({
+        // Separate texts by layer position
+        const behindTexts = texts.filter(t => !t.onTop);
+        const onTopTexts = texts.filter(t => t.onTop);
+
+        // Draw texts behind foreground
+        const centeredBehindTexts = behindTexts.map((t) => ({
             ...t,
             position: {
                 x: t.position.x,
                 y: t.position.y
             }
         }));
-        addTextToCanvas(ctx, centeredTexts, activeTextIndex, false); // Hide border indicator for export
+        addTextToCanvas(ctx, centeredBehindTexts, undefined, false, texts, activeTextIndex); // Hide border indicator for export
 
         // Draw foreground
         ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
         ctx.drawImage(foregroundImage, 0, 0);
         ctx.filter = 'none';
+
+        // Draw texts on top of foreground
+        const centeredOnTopTexts = onTopTexts.map((t) => ({
+            ...t,
+            position: {
+                x: t.position.x,
+                y: t.position.y
+            }
+        }));
+        addTextToCanvas(ctx, centeredOnTopTexts, undefined, false, texts, activeTextIndex); // Hide border indicator for export
     };
 
     useEffect(() => {
@@ -478,6 +507,18 @@ export default function EditorPage() {
 
                                     <Separator />
 
+                                    {/* Layer Position Switch */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <MoveUp className="w-4 h-4 text-muted-foreground" />
+                                            <Label className="text-xs text-muted-foreground">On Top</Label>
+                                        </div>
+                                        <Switch
+                                            checked={activeText.onTop ?? false}
+                                            onCheckedChange={(checked) => handleTextChange('onTop', checked)}
+                                        />
+                                    </div>
+
                                     {/* Text Content */}
                                     <div className="flex flex-col gap-2">
                                         <Label className="text-xs text-muted-foreground">Content</Label>
@@ -518,6 +559,8 @@ export default function EditorPage() {
                                             onCheckedChange={(checked) => handleTextChange('fontStyle', checked ? 'italic' : 'normal')}
                                         />
                                     </div>
+
+                                    <Separator />
 
 
                                     <div className="flex flex-col gap-2 w-full">
@@ -592,6 +635,8 @@ export default function EditorPage() {
                                         />
                                     </div>
 
+                                    <Separator />
+
                                     <div className="flex flex-col gap-2 w-full">
                                         <Label className="text-xs text-muted-foreground mb-1">Text Position</Label>
                                         
@@ -612,6 +657,8 @@ export default function EditorPage() {
                                                         step={1}
                                                     />
                                         </div>
+
+                                    <Separator />
 
                                     {/* Text Shadow Section */}
                                     <Separator />
@@ -690,6 +737,8 @@ export default function EditorPage() {
                                             </>
                                         )}
                                     </div>
+
+                                    <Separator />
 
                                     <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-8 text-xs">
                                         <RefreshCw className="w-3 h-3 mr-1" />

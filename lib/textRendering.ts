@@ -25,13 +25,17 @@ export interface TextSettings {
     textShadowOffsetX?: number;
     textShadowOffsetY?: number;
     textShadowBlur?: number;
+    // Layer position property
+    onTop?: boolean; // Whether text should be drawn on top of foreground image
   }
   
   export function addTextToCanvas(
     ctx: CanvasRenderingContext2D,
     textSettings: TextSettings | TextSettings[],
     activeTextIndex?: number,
-    showBorderIndicator: boolean = true
+    showBorderIndicator: boolean = true,
+    allTexts?: TextSettings[],
+    globalActiveIndex?: number
   ) {
     const layers = Array.isArray(textSettings) ? textSettings : [textSettings];
     for (let i = 0; i < layers.length; i++) {
@@ -141,7 +145,14 @@ export interface TextSettings {
         }
       }
       // Draw indicator if this is the active text and showBorderIndicator is true
-      if (showBorderIndicator && typeof activeTextIndex === 'number' && i === activeTextIndex) {
+      const shouldShowBorder = showBorderIndicator && 
+        (typeof globalActiveIndex === 'number' && allTexts && 
+         globalActiveIndex < allTexts.length && 
+         allTexts[globalActiveIndex].content === settings.content &&
+         allTexts[globalActiveIndex].position.x === settings.position.x &&
+         allTexts[globalActiveIndex].position.y === settings.position.y);
+      
+      if (shouldShowBorder) {
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
         ctx.globalAlpha = 1;

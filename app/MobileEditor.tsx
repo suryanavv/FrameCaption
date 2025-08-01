@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, Sun, Moon, MonitorSmartphone, Italic, Layers } from 'lucide-react';
+import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, Sun, Moon, MonitorSmartphone, Italic, Layers, MoveUp } from 'lucide-react';
 import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
@@ -184,17 +184,34 @@ export default function MobileEditor(props: MobileEditorProps) {
             ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%)`;
             ctx.drawImage(originalImage, 0, 0);
             ctx.filter = 'none';
-            const centeredTexts = texts.map((t) => ({
+            
+            // Separate texts by layer position
+            const behindTexts = texts.filter(t => !t.onTop);
+            const onTopTexts = texts.filter(t => t.onTop);
+
+            // Draw texts behind foreground
+            const centeredBehindTexts = behindTexts.map((t) => ({
                 ...t,
                 position: {
                     x: t.position.x,
                     y: t.position.y
                 }
             }));
-            addTextToCanvas(ctx, centeredTexts, activeTextIndex, true); // Show border indicator for editing
+            addTextToCanvas(ctx, centeredBehindTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
+            
             ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
             ctx.drawImage(foregroundImage, 0, 0);
             ctx.filter = 'none';
+
+            // Draw texts on top of foreground
+            const centeredOnTopTexts = onTopTexts.map((t) => ({
+                ...t,
+                position: {
+                    x: t.position.x,
+                    y: t.position.y
+                }
+            }));
+            addTextToCanvas(ctx, centeredOnTopTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
         };
         localDrawCanvas();
     }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast, activeTextIndex]);
@@ -361,6 +378,18 @@ export default function MobileEditor(props: MobileEditorProps) {
 
                                         <Separator />
 
+                                        {/* Layer Position Switch */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <MoveUp className="w-4 h-4 text-muted-foreground" />
+                                                <Label className="text-xs text-muted-foreground">On Top</Label>
+                                            </div>
+                                            <Switch
+                                                checked={activeText.onTop ?? false}
+                                                onCheckedChange={(checked) => handleTextChange('onTop', checked)}
+                                            />
+                                        </div>
+
                                         {/* Text Content */}
                                         <div className="flex flex-col gap-2">
                                             <Label className="text-xs text-muted-foreground">Content</Label>
@@ -401,6 +430,8 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 onCheckedChange={(checked) => handleTextChange('fontStyle', checked ? 'italic' : 'normal')}
                                             />
                                         </div>
+
+                                        <Separator />
 
 
                                         {/* Color */}
@@ -476,6 +507,8 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             />
                                         </div>
 
+                                        <Separator />
+
                                         {/* Match desktop X/Y sliders for text position */}
                                         <div className="flex flex-col gap-2 w-full">
                                             <Label className="text-xs text-muted-foreground mb-1">Text Position</Label>
@@ -497,8 +530,9 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             />
                                         </div>
 
-                                        {/* Text Shadow Section */}
                                         <Separator />
+
+                                        {/* Text Shadow Section */}
                                         <div className="flex flex-col gap-3">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
@@ -574,6 +608,8 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 </>
                                             )}
                                         </div>
+
+                                        <Separator />
 
                                         <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-8 text-xs">
                                             <RefreshCw className="w-3 h-3 mr-1" />
