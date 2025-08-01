@@ -172,7 +172,39 @@ export default function EditorPage() {
                 y: t.position.y
             }
         }));
-        addTextToCanvas(ctx, centeredTexts, activeTextIndex);
+        addTextToCanvas(ctx, centeredTexts, activeTextIndex, true); // Show border indicator for editing
+
+        // Draw foreground
+        ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
+        ctx.drawImage(foregroundImage, 0, 0);
+        ctx.filter = 'none';
+    };
+
+    // Separate function for export without border indicator
+    const drawCanvasForExport = () => {
+        const canvas = canvasRef.current;
+        if (!canvas || !originalImage || !foregroundImage) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        canvas.width = originalImage.width;
+        canvas.height = originalImage.height;
+
+        // Draw background
+        ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%)`;
+        ctx.drawImage(originalImage, 0, 0);
+        ctx.filter = 'none';
+
+        // Draw texts (centered) without border indicator
+        const centeredTexts = texts.map((t) => ({
+            ...t,
+            position: {
+                x: t.position.x,
+                y: t.position.y
+            }
+        }));
+        addTextToCanvas(ctx, centeredTexts, activeTextIndex, false); // Hide border indicator for export
 
         // Draw foreground
         ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
@@ -206,10 +238,17 @@ export default function EditorPage() {
     const downloadImage = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
+        
+        // Draw canvas for export (without border indicator)
+        drawCanvasForExport();
+        
         const link = document.createElement('a');
         link.download = downloadFilename;
         link.href = canvas.toDataURL('image/png');
         link.click();
+        
+        // Redraw canvas with border indicator for editing
+        drawCanvas();
     };
 
     const resetImageEdits = () => {
@@ -326,6 +365,7 @@ export default function EditorPage() {
                 // pass all handlers as props
                 handleImageUpload={handleImageUpload}
                 drawCanvas={drawCanvas}
+                drawCanvasForExport={drawCanvasForExport}
                 handleTextChange={handleTextChange}
                 addText={addText}
                 deleteText={deleteText}

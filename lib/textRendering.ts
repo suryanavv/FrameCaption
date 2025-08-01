@@ -23,7 +23,8 @@ export interface TextSettings {
   export function addTextToCanvas(
     ctx: CanvasRenderingContext2D,
     textSettings: TextSettings | TextSettings[],
-    activeTextIndex?: number
+    activeTextIndex?: number,
+    showBorderIndicator: boolean = true
   ) {
     const layers = Array.isArray(textSettings) ? textSettings : [textSettings];
     for (let i = 0; i < layers.length; i++) {
@@ -99,8 +100,8 @@ export interface TextSettings {
           }
         }
       }
-      // Draw indicator if this is the active text
-      if (typeof activeTextIndex === 'number' && i === activeTextIndex) {
+      // Draw indicator if this is the active text and showBorderIndicator is true
+      if (showBorderIndicator && typeof activeTextIndex === 'number' && i === activeTextIndex) {
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
         ctx.globalAlpha = 1;

@@ -89,6 +89,7 @@ interface MobileEditorProps {
     canvasRef: React.RefObject<HTMLCanvasElement>;
     handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
     drawCanvas: () => void;
+    drawCanvasForExport: () => void;
     handleTextChange: (key: keyof TextSettings, value: TextSettings[keyof TextSettings]) => void;
     addText: () => void;
     deleteText: (index: number) => void;
@@ -109,7 +110,7 @@ export default function MobileEditor(props: MobileEditorProps) {
         image, originalImage, foregroundImage,
         texts, setTexts, activeTextIndex, setActiveTextIndex, bgBrightness, setBgBrightness,
         bgContrast, setBgContrast, fgBrightness, setFgBrightness, fgContrast, setFgContrast,
-        activeTab, setActiveTab, canvasRef, handleImageUpload, handleTextChange,
+        activeTab, setActiveTab, canvasRef, handleImageUpload, drawCanvas, drawCanvasForExport, handleTextChange,
         addText, deleteText, downloadImage, resetImageEdits, resetTextEdits,
         tryAnotherImage, activeText, loading
     } = props;
@@ -133,6 +134,23 @@ export default function MobileEditor(props: MobileEditorProps) {
         [newTexts[index], newTexts[index + 1]] = [newTexts[index + 1], newTexts[index]];
         setTexts(newTexts);
         setActiveTextIndex(index + 1);
+    };
+
+    // Create a mobile-specific download function that uses drawCanvasForExport
+    const downloadImageForMobile = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        
+        // Draw canvas for export (without border indicator)
+        drawCanvasForExport();
+        
+        const link = document.createElement('a');
+        link.download = 'framecaption.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        // Redraw canvas with border indicator for editing
+        drawCanvas();
     };
 
     useEffect(() => {
@@ -172,7 +190,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                     y: t.position.y
                 }
             }));
-            addTextToCanvas(ctx, centeredTexts, activeTextIndex);
+            addTextToCanvas(ctx, centeredTexts, activeTextIndex, true); // Show border indicator for editing
             ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
             ctx.drawImage(foregroundImage, 0, 0);
             ctx.filter = 'none';
@@ -287,7 +305,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                         </div>
                         {/* Mobile/Tablet Download Actions + Move Button */}
                         <div className="flex w-full justify-center p-2 gap-2 relative">
-                            <Button onClick={downloadImage} className="h-9 text-xs flex-1 flex items-center gap-2">
+                            <Button onClick={downloadImageForMobile} className="h-9 text-xs flex-1 flex items-center gap-2">
                                 <Download className="w-4 h-4" />
                                 Download
                             </Button>
