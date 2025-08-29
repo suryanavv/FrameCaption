@@ -50,8 +50,10 @@
   --radius-xl: calc(var(--radius) + 4px);
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-ripple: ripple var(--duration,2s) ease calc(var(--i, 0)*.2s) infinite;
+}
 
-  @keyframes accordion-down {
+@keyframes accordion-down {
     from {
       height: 0;
     }
@@ -68,7 +70,15 @@
       height: 0;
     }
   }
-}
+
+@keyframes ripple {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    }
+  50% {
+    transform: translate(-50%, -50%) scale(0.9);
+    }
+  }
 
 :root {
   --radius: 0.625rem;
@@ -189,45 +199,7 @@ button, [role="button"], input, select, textarea, label {
     display: none;
   }
 }
-
-/* Splash Screen Animations */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes logoFloat {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes textGlow {
-  0%, 100% {
-    text-shadow: 0 0 5px rgba(var(--primary), 0.3);
-  }
-  50% {
-    text-shadow: 0 0 20px rgba(var(--primary), 0.6);
-  }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.8s ease-out;
-}
-
-.animate-logo-float {
-  animation: logoFloat 3s ease-in-out infinite;
-}
-
-.animate-text-glow {
-  animation: textGlow 2s ease-in-out infinite;
+::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
 }

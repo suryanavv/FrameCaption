@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { ThemeSwitch } from "@/components/ui/themeSwitch";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, Sun, Moon, MonitorSmartphone, Italic, Layers, MoveUp } from 'lucide-react';
+import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, Italic, Layers, MoveUp } from 'lucide-react';
 import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono, roboto, openSans, lato, merriweather, playfairDisplay, rubik, nunito, oswald, raleway, ptSerif, cabin, quicksand, firaMono, jetbrainsMono, dancingScript, pacifico, caveat, satisfy, indieFlower, greatVibes, shadowsIntoLight } from "@/components/fonts";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
-import { useTheme } from "next-themes";
+import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler";
 
 // Onest is now the global app font
 const googleFonts = [
@@ -94,7 +94,7 @@ interface MobileEditorProps {
     handleTextChange: (key: keyof TextSettings, value: TextSettings[keyof TextSettings]) => void;
     addText: () => void;
     deleteText: (index: number) => void;
-    downloadImage: () => void;
+
     resetImageEdits: () => void;
     resetTextEdits: () => void;
     tryAnotherImage: () => void;
@@ -113,13 +113,12 @@ export default function MobileEditor(props: MobileEditorProps) {
         texts, setTexts, activeTextIndex, setActiveTextIndex, bgBrightness, setBgBrightness,
         bgContrast, setBgContrast, fgBrightness, setFgBrightness, fgContrast, setFgContrast,
         activeTab, setActiveTab, canvasRef, handleImageUpload, drawCanvas, drawCanvasForExport, handleTextChange,
-        addText, deleteText, downloadImage, resetImageEdits, resetTextEdits,
+        addText, deleteText, resetImageEdits, resetTextEdits,
         tryAnotherImage, activeText, loading, generateUniqueFilename
     } = props;
 
-    const [themeDrawerOpen, setThemeDrawerOpen] = useState(false);
+
     const [isMobile, setIsMobile] = useState(false);
-    const { theme } = useTheme();
 
     // Animation frame ref for smooth updates
     const animationFrameRef = useRef<number | null>(null);
@@ -301,49 +300,19 @@ export default function MobileEditor(props: MobileEditorProps) {
         <div className="w-full h-screen bg-background overflow-hidden flex flex-col">
             {/* Sticky Header with gap and rounded corners */}
             <div className="p-2">
-                <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-md rounded-[var(--radius)] overflow-hidden border-b border-[var(--border)] w-full max-w-full mx-auto relative">
+                <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-md rounded-[var(--radius-sm)] overflow-hidden border-b border-[var(--border)] w-full max-w-full mx-auto">
                     <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                         <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
                         FrameCaption
                     </h1>
-                    {isMobile && (
-                        <button
-                            className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-primary/10 transition-colors"
-                            aria-label="Theme Control"
-                            onClick={() => setThemeDrawerOpen(true)}
-                        >
-                            {theme === 'system' && <MonitorSmartphone className="w-5 h-5 text-[var(--primary)]" />}
-                            {theme === 'light' && <Sun className="w-5 h-5 text-[var(--primary)]" />}
-                            {theme === 'dark' && <Moon className="w-5 h-5 text-[var(--primary)]" />}
-                        </button>
-                    )}
+                    {isMobile && <AnimatedThemeToggler className="absolute right-2 top-1/2 -translate-y-1/2" />}
                 </header>
             </div>
-            {/* Simple Theme Modal for mobile */}
-            {isMobile && themeDrawerOpen && (
-                <>
-                    {/* Overlay */}
-                    <div
-                        className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-sm transition-opacity animate-fade-in"
-                        onClick={() => setThemeDrawerOpen(false)}
-                        aria-label="Close theme modal"
-                    />
-                    {/* Centered Modal */}
-                    <div
-                        className="fixed left-1/2 top-1/2 z-[1001] -translate-x-1/2 -translate-y-1/2 bg-[var(--background)]/95 rounded-[var(--radius)] shadow-2xl border border-[var(--border)] p-6 w-full max-w-sm flex flex-col items-center justify-center animate-fade-in"
-                        role="dialog"
-                        aria-modal="true"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <h2 className="text-base font-semibold mb-4 text-center text-[var(--foreground)]/80">Change Theme</h2>
-                        <ThemeSwitch className="w-full max-w-[220px] mx-auto" />
-                    </div>
-                </>
-            )}
+
             {/* Sticky Canvas Area below header */}
             <div className="sticky top-[3.25rem] px-2 z-20 mb-2 min-h-[350px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[350px] h-[32vh] max-h-[400px] sm:max-h-[500px] md:max-h-[600px] lg:max-h-[700px]">
                 {!image ? (
-                    <div className="flex flex-col w-full h-full mx-auto items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius)] border-b border-[var(--border)] overflow-hidden relative">
+                    <div className="flex flex-col w-full h-full mx-auto items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-[var(--border)] overflow-hidden relative">
                         <Upload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
                         <p className="text-[var(--muted-foreground)] mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
@@ -354,7 +323,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                         <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     </div>
                 ) : (
-                    <section className="flex flex-col w-full h-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius)] border-b border-[var(--border)] overflow-hidden relative">
+                    <section className="flex flex-col w-full h-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-[var(--border)] overflow-hidden relative">
                         {loading && (
                             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
                                 <span className="text-lg font-semibold text-white animate-pulse">Processing image...</span>
@@ -386,7 +355,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                 <aside className="flex flex-col gap-1 w-full max-w-full h-full overflow-hidden">
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'text' | 'image')} className="flex flex-col items-center w-full h-full">
                         {/* Tabs Content first */}
-                        <section className="w-full bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius)] flex flex-col min-h-[300px] border border-[var(--border)] mb-10">
+                        <section className="w-full bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] flex flex-col min-h-[300px] border border-[var(--border)] mb-10">
                             {/* Scrollable Content Area */}
                             <div className="flex flex-col flex-1 min-h-0 overflow-y-auto no-scrollbar p-3">
                                 {activeTab === 'text' && (
@@ -403,7 +372,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 {texts.slice().reverse().map((text, index) => {
                                                     const originalIndex = texts.length - 1 - index;
                                                     return (
-                                                        <div key={originalIndex} className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${activeTextIndex === originalIndex ? 'bg-primary/10' : 'hover:bg-primary/5'}`} onClick={() => setActiveTextIndex(originalIndex)}>
+                                                        <div key={originalIndex} className={`flex items-center justify-between p-2 rounded-[var(--radius-sm)] cursor-pointer transition-all ${activeTextIndex === originalIndex ? 'bg-primary/10' : 'hover:bg-primary/5'}`} onClick={() => setActiveTextIndex(originalIndex)}>
                                                             <span className="truncate text-xs" style={{ fontFamily: text.font }}>{text.content}</span>
                                                             <div className="flex items-center gap-1">
                                                                 {/* Mobile: Up/Down controls (fixed for reversed order) */}
@@ -756,7 +725,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                         </section>
                         {/* TabsList (tab buttons) sticky at bottom, but inside Tabs */}
                         <div className="fixed bottom-0 left-0 w-full z-40 bg-[var(--background)] border-t border-[var(--border)] p-2">
-                            <TabsList className="w-full flex items-center gap-1 h-10 rounded-[var(--radius)]">
+                            <TabsList className="w-full flex items-center gap-1 h-10 rounded-[var(--radius-sm)]">
                                 <TabsTrigger
                                     value="text"
                                     className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)]"

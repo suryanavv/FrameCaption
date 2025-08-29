@@ -2,10 +2,9 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { ThemeSwitch } from "@/components/ui/themeSwitch";
+
 import { Button } from "@/components/ui/button";
-import { Sun, Moon, MonitorSmartphone } from 'lucide-react';
-import { useTheme } from 'next-themes';
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -22,6 +21,7 @@ import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funn
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
 import dynamic from 'next/dynamic';
+import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler";
 
 const MobileEditor = dynamic(() => import('./MobileEditor'), { ssr: false });
 
@@ -120,8 +120,8 @@ export default function EditorPage() {
     const [loading, setLoading] = useState(false);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-    const [themeDrawerOpen, setThemeDrawerOpen] = useState(false);
-    const { theme } = useTheme();
+
+
 
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 1024);
@@ -308,7 +308,7 @@ export default function EditorPage() {
             try {
                 const stored = localStorage.getItem(`downloaded_${name}`);
                 return stored !== null;
-            } catch (e) {
+            } catch {
                 // localStorage not available, fallback to counter-based naming
                 return counter > 0;
             }
@@ -322,7 +322,7 @@ export default function EditorPage() {
         // Store that we've downloaded this filename (for this session)
         try {
             localStorage.setItem(`downloaded_${filename}`, Date.now().toString());
-        } catch (e) {
+        } catch {
             // localStorage not available, continue without tracking
         }
 
@@ -409,7 +409,7 @@ export default function EditorPage() {
         setDragOverIndex(index);
     };
 
-    const handleDragLeave = (e: React.DragEvent) => {
+    const handleDragLeave = () => {
         setDragOverIndex(null);
     };
 
@@ -469,7 +469,7 @@ export default function EditorPage() {
                 handleTextChange={handleTextChange}
                 addText={addText}
                 deleteText={deleteText}
-                downloadImage={downloadImage}
+
                 resetImageEdits={resetImageEdits}
                 resetTextEdits={resetTextEdits}
                 tryAnotherImage={tryAnotherImage}
@@ -484,7 +484,7 @@ export default function EditorPage() {
     return (
         <div className="flex flex-col lg:flex-row p-1.5 w-full h-screen max-h-screen overflow-hidden">
             {/* Mobile Top Header */}
-            <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-[var(--secondary)]/80 backdrop-blur-md rounded-[var(--radius)] border border-[var(--border)] w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto mb-2 lg:hidden">
+            <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-[var(--secondary)]/80 backdrop-blur-md rounded-[var(--radius-sm)] border border-[var(--border)] w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto mb-2 lg:hidden">
                 <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                     <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
                     FrameCaption
@@ -495,24 +495,16 @@ export default function EditorPage() {
                 {/* Left Sidebar - Controls */}
                 <aside className="flex flex-col gap-1 w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] h-auto lg:h-full overflow-visible lg:overflow-hidden order-2 lg:order-1 mb-2 lg:mb-0">
                     {/* Desktop Sidebar Header */}
-                    <header className="hidden lg:flex h-10 items-center justify-center bg-[var(--secondary)] backdrop-blur-md rounded-[var(--radius)] border border-[var(--border)] w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto relative">
+                    <header className="hidden lg:flex h-10 items-center justify-center bg-[var(--secondary)] backdrop-blur-md rounded-[var(--radius-sm)] border border-[var(--border)] w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto">
                         <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                             <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
                             FrameCaption
                         </h1>
-                        <button
-                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-[var(--primary)]/10 transition-colors"
-                            aria-label="Theme Control"
-                            onClick={() => setThemeDrawerOpen(true)}
-                        >
-                            {theme === 'system' && <MonitorSmartphone className="w-4 h-4 text-[var(--primary)]" />}
-                            {theme === 'light' && <Sun className="w-4 h-4 text-[var(--primary)]" />}
-                            {theme === 'dark' && <Moon className="w-4 h-4 text-[var(--primary)]" />}
-                        </button>
+                        <AnimatedThemeToggler className="absolute right-0.5 top-1/2 -translate-y-1/2 cursor-pointer" />
                     </header>
 
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "text" | "image")} className="flex flex-col items-center w-full">
-                        <TabsList className="w-full flex items-center gap-1 h-8 lg:h-10 rounded-[var(--radius)]">
+                        <TabsList className="w-full flex items-center gap-1 h-8 lg:h-10 rounded-[var(--radius-sm)]">
                             <TabsTrigger
                                 value={"text"}
                                 className="flex-1 text-xs border border-[var(--border)] p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 cursor-pointer rounded-[var(--radius-sm)]"
@@ -530,7 +522,7 @@ export default function EditorPage() {
                         </TabsList>
                     </Tabs>
 
-                    <section className="w-full bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius)] flex flex-col min-h-[400px] h-auto lg:h-full border border-[var(--border)]">
+                    <section className="w-full bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] flex flex-col min-h-[400px] h-auto lg:h-full border border-[var(--border)]">
                         {/* Scrollable Content Area */}
                         <div className="flex flex-col flex-1 min-h-0 overflow-y-auto no-scrollbar p-3">
                             {activeTab === "text" && (
@@ -555,7 +547,7 @@ export default function EditorPage() {
                                                         onDragLeave={handleDragLeave}
                                                         onDrop={(e) => handleDrop(e, originalIndex)}
                                                         onDragEnd={handleDragEnd}
-                                                        className={`flex items-center justify-between p-2 rounded-[var(--radius)] cursor-pointer transition-all ${
+                                                        className={`flex items-center justify-between p-2 rounded-[var(--radius-sm)] cursor-pointer transition-all ${
                                                             activeTextIndex === originalIndex ? 'bg-[var(--primary)]/10' : 'hover:bg-[var(--primary)]/5'
                                                         } ${
                                                             draggedIndex === originalIndex ? 'opacity-50' : ''
@@ -912,7 +904,7 @@ export default function EditorPage() {
                 {/* Main Canvas Area - Full Width */}
                 {!image ? (
                     /* Full Page Upload Section */
-                    <div className="flex flex-col h-[300px] sm:h-[400px] md:h-[500px] lg:h-full w-full mx-auto items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius)] border border-[var(--border)] overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
+                    <div className="flex flex-col h-[300px] sm:h-[400px] md:h-[500px] lg:h-full w-full mx-auto items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border border-[var(--border)] overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
                         <Upload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
                         <p className="text-[var(--muted-foreground)] mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
@@ -923,7 +915,7 @@ export default function EditorPage() {
                         <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     </div>
                 ) : (
-                    <section className="flex flex-col w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius)] border border-[var(--border)] overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
+                    <section className="flex flex-col w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border border-[var(--border)] overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
                         {loading && (
                             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
                                 <span className="text-lg font-semibold text-white animate-pulse">Processing image...</span>
@@ -937,7 +929,7 @@ export default function EditorPage() {
                             />
                         </div>
                         {/* Floating Download Actions */}
-                        <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-8 z-40 bg-white dark:bg-[var(--secondary)]/90 rounded-[var(--radius)] shadow-lg border border-[var(--border)] p-1 gap-1.5 items-center">
+                        <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-8 z-40 bg-white dark:bg-[var(--secondary)]/90 rounded-[var(--radius-sm)] shadow-lg border border-[var(--border)] p-1 gap-1.5 items-center">
                             <Button onClick={downloadImage} className="h-9 text-xs flex items-center gap-2">
                                 <Download className="w-4 h-4" />
                                 Download
@@ -965,26 +957,7 @@ export default function EditorPage() {
             </div>
 
             {/* Theme Modal for Desktop */}
-            {themeDrawerOpen && (
-                <>
-                    {/* Overlay */}
-                    <div
-                        className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-sm transition-opacity animate-fade-in"
-                        onClick={() => setThemeDrawerOpen(false)}
-                        aria-label="Close theme modal"
-                    />
-                    {/* Centered Modal */}
-                    <div
-                        className="fixed left-1/2 top-1/2 z-[1001] -translate-x-1/2 -translate-y-1/2 bg-[var(--background)]/95 rounded-[var(--radius)] shadow-2xl border border-[var(--border)] p-6 w-full max-w-sm flex flex-col items-center justify-center animate-fade-in"
-                        role="dialog"
-                        aria-modal="true"
-                        onClick={e => e.stopPropagation()}
-                    >
-                        <h2 className="text-base font-semibold mb-4 text-center text-[var(--foreground)]/80">Change Theme</h2>
-                        <ThemeSwitch className="w-full max-w-[240px] mx-auto" />
-                    </div>
-                </>
-            )}
+
 
             <Toaster />
         </div>

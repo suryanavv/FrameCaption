@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { Ripple } from '@/components/magicui/ripple';
 
 interface SplashScreenProps {
   children: React.ReactNode;
@@ -49,59 +50,53 @@ export default function SplashScreen({ children }: SplashScreenProps) {
       {/* Splash Screen */}
       <div
         className={cn(
-          "fixed inset-0 z-50 flex items-center justify-center bg-background transition-opacity duration-500 overflow-hidden",
+          "fixed inset-0 z-50 flex items-center justify-center bg-background overflow-hidden",
           isLoading ? "opacity-100" : "opacity-0"
         )}
       >
-        {/* Animated background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 animate-pulse" />
-        <div className="absolute inset-0 bg-gradient-to-tl from-primary/3 via-transparent to-primary/3 animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="flex flex-col items-center space-y-6 animate-fade-in-up">
+        <Ripple 
+          mainCircleSize={300}
+          mainCircleOpacity={0.25}
+          numCircles={12}
+          className="absolute inset-0"
+        />
+
+        <div className="flex flex-col items-center space-y-4">
           {/* Logo with animation */}
           <div className="relative">
-            <div className="w-24 h-24 relative flex items-center justify-center">
+            <div className="w-14 h-14 relative flex items-center justify-center">
               <Image
                 src="/icon.svg"
                 alt="FrameCaption"
-                width={48}
-                height={48}
-                className="animate-pulse"
+                width={32}
+                height={32}
+                className=""
               />
-              {/* Pulse ring animation */}
-              <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping" />
-              <div className="absolute inset-0 rounded-full border-2 border-primary/10 animate-pulse" />
             </div>
           </div>
 
           {/* App name */}
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold text-center animate-fade-in">
+          <div className="text-center space-y-1">
+            <h1 className="text-lg font-bold text-center">
               FrameCaption
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Add beautiful text overlays to your images
             </p>
           </div>
 
-          {/* Progress bar */}
-          <div className="w-48 h-1 bg-primary/20 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary rounded-full transition-all duration-300 ease-out"
+          {/* Simple progress bar loader */}
+          <div className="w-40 h-1 bg-muted rounded-full overflow-hidden mt-2">
+            <div
+              className="h-full bg-primary transition-all duration-300"
               style={{ width: `${progress}%` }}
             />
           </div>
-          
-          {/* Loading dots */}
-          {/* <div className="flex space-x-1">
-            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-          </div> */}
         </div>
       </div>
 
       {/* Main content (hidden during splash) */}
-      <div className={cn("transition-opacity duration-500", isLoading ? "opacity-0" : "opacity-100")}>
+      <div className={cn(isLoading ? "opacity-0" : "opacity-100")}>
         {children}
       </div>
     </>
