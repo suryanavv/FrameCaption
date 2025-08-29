@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { ThemeSwitch } from "@/components/ui/themeSwitch";
 import { Button } from "@/components/ui/button";
+import { Sun, Moon, MonitorSmartphone } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
@@ -116,9 +118,11 @@ export default function EditorPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isMobile, setIsMobile] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [downloadFilename, setDownloadFilename] = useState('framecaption.png');
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const [themeDrawerOpen, setThemeDrawerOpen] = useState(false);
+    const { theme } = useTheme();
+
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 1024);
         check();
@@ -132,7 +136,6 @@ export default function EditorPage() {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             setImage(file);
-            setDownloadFilename(file.name.replace(/\.[^/.]+$/, '') + '.png');
 
             const img = document.createElement('img') as HTMLImageElement;
             img.src = URL.createObjectURL(file);
@@ -157,54 +160,65 @@ export default function EditorPage() {
         }
     };
 
-    // In drawCanvas, do not subtract half the text width/height from t.position. Use t.position.x and t.position.y directly.
-    const drawCanvas = () => {
+    // Animation frame ref for smooth updates
+    const animationFrameRef = useRef<number | null>(null);
+
+    // Optimized drawing function with requestAnimationFrame
+    const drawCanvas = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas || !originalImage || !foregroundImage) return;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        canvas.width = originalImage.width;
-        canvas.height = originalImage.height;
+        // Cancel any pending animation frame
+        if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+        }
 
-        // Draw background
-        ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%)`;
-        ctx.drawImage(originalImage, 0, 0);
-        ctx.filter = 'none';
+        // Schedule the draw operation
+        animationFrameRef.current = requestAnimationFrame(() => {
+            canvas.width = originalImage.width;
+            canvas.height = originalImage.height;
 
-        // Separate texts by layer position
-        const behindTexts = texts.filter(t => !t.onTop);
-        const onTopTexts = texts.filter(t => t.onTop);
+            // Draw background
+            ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%)`;
+            ctx.drawImage(originalImage, 0, 0);
+            ctx.filter = 'none';
 
-        // Draw texts behind foreground
-        const centeredBehindTexts = behindTexts.map((t) => ({
-            ...t,
-            position: {
-                x: t.position.x,
-                y: t.position.y
-            }
-        }));
-        addTextToCanvas(ctx, centeredBehindTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
+            // Separate texts by layer position
+            const behindTexts = texts.filter(t => !t.onTop);
+            const onTopTexts = texts.filter(t => t.onTop);
 
-        // Draw foreground
-        ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
-        ctx.drawImage(foregroundImage, 0, 0);
-        ctx.filter = 'none';
+            // Draw texts behind foreground
+            const centeredBehindTexts = behindTexts.map((t) => ({
+                ...t,
+                position: {
+                    x: t.position.x,
+                    y: t.position.y
+                }
+            }));
+            addTextToCanvas(ctx, centeredBehindTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
 
-        // Draw texts on top of foreground
-        const centeredOnTopTexts = onTopTexts.map((t) => ({
-            ...t,
-            position: {
-                x: t.position.x,
-                y: t.position.y
-            }
-        }));
-        addTextToCanvas(ctx, centeredOnTopTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
-    };
+            // Draw foreground
+            ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
+            ctx.drawImage(foregroundImage, 0, 0);
+            ctx.filter = 'none';
 
-    // Separate function for export without border indicator
-    const drawCanvasForExport = () => {
+            // Draw texts on top of foreground
+            const centeredOnTopTexts = onTopTexts.map((t) => ({
+                ...t,
+                position: {
+                    x: t.position.x,
+                    y: t.position.y
+                }
+            }));
+            addTextToCanvas(ctx, centeredOnTopTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
+        });
+    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast, activeTextIndex]);
+
+    // Optimized export drawing function
+    const drawCanvasForExport = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas || !originalImage || !foregroundImage) return;
 
@@ -247,17 +261,29 @@ export default function EditorPage() {
             }
         }));
         addTextToCanvas(ctx, centeredOnTopTexts, undefined, false, texts, activeTextIndex); // Hide border indicator for export
-    };
+    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast, activeTextIndex]);
 
     useEffect(() => {
         drawCanvas();
-    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast]);
+    }, [drawCanvas]);
 
-    const handleTextChange = (key: keyof TextSettings, value: TextSettings[keyof TextSettings]) => {
-        const newTexts = [...texts];
-        newTexts[activeTextIndex] = { ...newTexts[activeTextIndex], [key]: value };
-        setTexts(newTexts);
-    };
+    // Cleanup animation frames on unmount
+    useEffect(() => {
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+        };
+    }, []);
+
+    // Debounced text change handler for smooth slider updates
+    const handleTextChange = useCallback((key: keyof TextSettings, value: TextSettings[keyof TextSettings]) => {
+        setTexts(prevTexts => {
+            const newTexts = [...prevTexts];
+            newTexts[activeTextIndex] = { ...newTexts[activeTextIndex], [key]: value };
+            return newTexts;
+        });
+    }, [activeTextIndex]);
 
     const addText = () => {
         const center = getCenterPosition(originalImage ?? undefined);
@@ -272,18 +298,49 @@ export default function EditorPage() {
         setActiveTextIndex(Math.max(0, activeTextIndex - 1));
     };
 
+    // Generate unique filename
+    const generateUniqueFilename = () => {
+        let counter = 0;
+        let filename = 'frame_caption.png';
+
+        // Check if we've downloaded this filename before (simple session-based tracking)
+        const checkIfExists = (name: string) => {
+            try {
+                const stored = localStorage.getItem(`downloaded_${name}`);
+                return stored !== null;
+            } catch (e) {
+                // localStorage not available, fallback to counter-based naming
+                return counter > 0;
+            }
+        };
+
+        while (checkIfExists(filename)) {
+            counter++;
+            filename = counter === 1 ? 'frame_caption(1).png' : `frame_caption(${counter}).png`;
+        }
+
+        // Store that we've downloaded this filename (for this session)
+        try {
+            localStorage.setItem(`downloaded_${filename}`, Date.now().toString());
+        } catch (e) {
+            // localStorage not available, continue without tracking
+        }
+
+        return filename;
+    };
+
     const downloadImage = () => {
         const canvas = canvasRef.current;
         if (!canvas) return;
-        
+
         // Draw canvas for export (without border indicator)
         drawCanvasForExport();
-        
+
         const link = document.createElement('a');
-        link.download = downloadFilename;
+        link.download = generateUniqueFilename();
         link.href = canvas.toDataURL('image/png');
         link.click();
-        
+
         // Redraw canvas with border indicator for editing
         drawCanvas();
     };
@@ -309,11 +366,12 @@ export default function EditorPage() {
         setTexts([{ ...defaultTextSettings, position: getCenterPosition() }]);
         setActiveTextIndex(0);
         resetImageEdits();
-        setDownloadFilename('framecaption.png');
     };
 
     const activeText = texts[activeTextIndex];
-    useEffect(() => {
+
+    // Optimized position calculation with memoization
+    const updateTextPosition = useCallback(() => {
         if (!originalImage) return;
         const width = originalImage.width;
         const height = originalImage.height;
@@ -323,6 +381,7 @@ export default function EditorPage() {
         const pixel_offset_Y = (activeText.sliderY ?? 0) * pixels_per_unit_Y;
         const target_x = (width / 2) + pixel_offset_X;
         const target_y = (height / 2) + pixel_offset_Y;
+
         setTexts(prev => {
             const newTexts = [...prev];
             newTexts[activeTextIndex] = {
@@ -331,7 +390,11 @@ export default function EditorPage() {
             };
             return newTexts;
         });
-    }, [activeText.sliderX, activeText.sliderY, activeTextIndex, originalImage?.width, originalImage?.height]);
+    }, [originalImage, activeText.sliderX, activeText.sliderY, activeTextIndex]);
+
+    useEffect(() => {
+        updateTextPosition();
+    }, [updateTextPosition]);
 
     // Drag and drop handlers
     const handleDragStart = (e: React.DragEvent, index: number) => {
@@ -413,6 +476,7 @@ export default function EditorPage() {
                 activeText={activeText}
                 loading={loading}
                 setLoading={setLoading}
+                generateUniqueFilename={generateUniqueFilename}
             />
         );
     }
@@ -420,7 +484,7 @@ export default function EditorPage() {
     return (
         <div className="flex flex-col lg:flex-row p-1.5 w-full h-screen max-h-screen overflow-hidden">
             {/* Mobile Top Header */}
-            <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-secondary/80 backdrop-blur-md rounded-xl border border-primary/10 w-full max-w-full sm:max-w-[320px] lg:max-w-[240px] mx-auto mb-2 lg:hidden">
+            <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-[var(--secondary)]/80 backdrop-blur-md rounded-[var(--radius)] border border-[var(--border)] w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto mb-2 lg:hidden">
                 <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                     <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
                     FrameCaption
@@ -429,26 +493,36 @@ export default function EditorPage() {
             {/* Responsive Layout with Image */}
             <div className="flex flex-col lg:flex-row gap-1.5 w-full h-full">
                 {/* Left Sidebar - Controls */}
-                <aside className="flex flex-col gap-1 w-full max-w-full sm:max-w-[320px] lg:max-w-[205px] h-auto lg:h-full overflow-visible lg:overflow-hidden order-2 lg:order-1 mb-2 lg:mb-0">
+                <aside className="flex flex-col gap-1 w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] h-auto lg:h-full overflow-visible lg:overflow-hidden order-2 lg:order-1 mb-2 lg:mb-0">
                     {/* Desktop Sidebar Header */}
-                    <header className="hidden lg:flex h-10 items-center justify-center bg-secondary backdrop-blur-md rounded-xl border border-primary/10 w-full max-w-full sm:max-w-[320px] lg:max-w-[240px] mx-auto">
+                    <header className="hidden lg:flex h-10 items-center justify-center bg-[var(--secondary)] backdrop-blur-md rounded-[var(--radius)] border border-[var(--border)] w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto relative">
                         <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                             <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
                             FrameCaption
                         </h1>
+                        <button
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full hover:bg-[var(--primary)]/10 transition-colors"
+                            aria-label="Theme Control"
+                            onClick={() => setThemeDrawerOpen(true)}
+                        >
+                            {theme === 'system' && <MonitorSmartphone className="w-4 h-4 text-[var(--primary)]" />}
+                            {theme === 'light' && <Sun className="w-4 h-4 text-[var(--primary)]" />}
+                            {theme === 'dark' && <Moon className="w-4 h-4 text-[var(--primary)]" />}
+                        </button>
                     </header>
+
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "text" | "image")} className="flex flex-col items-center w-full">
-                        <TabsList className="w-full flex items-center gap-1 h-8 lg:h-10">
+                        <TabsList className="w-full flex items-center gap-1 h-8 lg:h-10 rounded-[var(--radius)]">
                             <TabsTrigger
                                 value={"text"}
-                                className="flex-1 text-xs border border-primary/20 p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 cursor-pointer"
+                                className="flex-1 text-xs border border-[var(--border)] p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 cursor-pointer rounded-[var(--radius-sm)]"
                             >
                                 <Type className="w-2.5 h-2.5" />
                                 <span className="text-[0.625rem]">Text</span>
                             </TabsTrigger>
                             <TabsTrigger
                                 value={"image"}
-                                className="flex-1 text-xs border border-primary/20 p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 cursor-pointer"
+                                className="flex-1 text-xs border border-[var(--border)] p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 cursor-pointer rounded-[var(--radius-sm)]"
                             >
                                 <ImageIcon className="w-2.5 h-2.5" />
                                 <span className="text-[0.625rem]">Image</span>
@@ -456,15 +530,16 @@ export default function EditorPage() {
                         </TabsList>
                     </Tabs>
 
-                    <section className="w-full bg-secondary/50 backdrop-blur-sm rounded-2xl flex flex-col flex-grow min-h-0 overflow-visible lg:overflow-hidden h-auto lg:h-full border border-primary/10">
-                        <div className="flex flex-col flex-grow min-h-0 overflow-y-auto no-scrollbar h-auto max-h-[60vh] lg:max-h-full p-3">
+                    <section className="w-full bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius)] flex flex-col min-h-[400px] h-auto lg:h-full border border-[var(--border)]">
+                        {/* Scrollable Content Area */}
+                        <div className="flex flex-col flex-1 min-h-0 overflow-y-auto no-scrollbar p-3">
                             {activeTab === "text" && (
-                                <div className="flex flex-col gap-4 pb-14 sm:pb-0"> {/* Add bottom padding for sticky button */}
+                                <div className="flex flex-col gap-4">
                                     {/* Text Layers */}
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
-                                            <Label className="text-xs text-muted-foreground">Text Layers</Label>
-                                            <Button variant="outline" size="sm" onClick={addText} className="text-xs h-7 px-2">
+                                            <Label className="text-xs text-[var(--muted-foreground)]">Text Layers</Label>
+                                            <Button variant="outline" size="sm" onClick={addText} className="w-full text-xs h-7 px-2">
                                                 Add
                                             </Button>
                                         </div>
@@ -472,21 +547,21 @@ export default function EditorPage() {
                                             {texts.slice().reverse().map((text, index) => {
                                                 const originalIndex = texts.length - 1 - index;
                                                 return (
-                                                    <div 
-                                                        key={originalIndex} 
+                                                    <div
+                                                        key={originalIndex}
                                                         draggable
                                                         onDragStart={(e) => handleDragStart(e, originalIndex)}
                                                         onDragOver={(e) => handleDragOver(e, originalIndex)}
                                                         onDragLeave={handleDragLeave}
                                                         onDrop={(e) => handleDrop(e, originalIndex)}
                                                         onDragEnd={handleDragEnd}
-                                                        className={`flex items-center justify-between p-2 rounded-xl cursor-pointer transition-all ${
-                                                            activeTextIndex === originalIndex ? 'bg-primary/10' : 'hover:bg-primary/5'
+                                                        className={`flex items-center justify-between p-2 rounded-[var(--radius)] cursor-pointer transition-all ${
+                                                            activeTextIndex === originalIndex ? 'bg-[var(--primary)]/10' : 'hover:bg-[var(--primary)]/5'
                                                         } ${
                                                             draggedIndex === originalIndex ? 'opacity-50' : ''
                                                         } ${
-                                                            dragOverIndex === originalIndex ? 'border-2 border-primary/50 bg-primary/5' : ''
-                                                        }`} 
+                                                            dragOverIndex === originalIndex ? 'border-2 border-[var(--primary)]/50 bg-[var(--primary)]/5' : ''
+                                                        }`}
                                                         onClick={() => setActiveTextIndex(originalIndex)}
                                                     >
                                                         <div className="flex items-center gap-1">
@@ -507,21 +582,21 @@ export default function EditorPage() {
 
                                     <Separator />
 
-                                    {/* Layer Position Switch */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <MoveUp className="w-4 h-4 text-muted-foreground" />
-                                            <Label className="text-xs text-muted-foreground">On Top</Label>
-                                        </div>
+                                                                            {/* Layer Position Switch */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <MoveUp className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <Label className="text-xs text-[var(--muted-foreground)]">On Top</Label>
+                                            </div>
                                         <Switch
                                             checked={activeText.onTop ?? false}
                                             onCheckedChange={(checked) => handleTextChange('onTop', checked)}
                                         />
                                     </div>
 
-                                    {/* Text Content */}
-                                    <div className="flex flex-col gap-2">
-                                        <Label className="text-xs text-muted-foreground">Content</Label>
+                                                                            {/* Text Content */}
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-[var(--muted-foreground)]">Content</Label>
                                         <Textarea
                                             value={activeText.content}
                                             onChange={(e) => handleTextChange('content', e.target.value)}
@@ -530,9 +605,9 @@ export default function EditorPage() {
                                         />
                                     </div>
 
-                                    {/* Font Selection */}
-                                    <div className="flex flex-col gap-2">
-                                        <Label className="text-xs text-muted-foreground">Font</Label>
+                                                                            {/* Font Selection */}
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-[var(--muted-foreground)]">Font</Label>
                                         <Select value={activeText.font} onValueChange={(value) => handleTextChange('font', value)}>
                                             <SelectTrigger className="w-full h-9 text-xs">
                                                 <SelectValue placeholder="Select font" />
@@ -548,12 +623,12 @@ export default function EditorPage() {
                                     </div>
 
 
-                                    {/* Font Style Switch */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <Italic className="w-4 h-4 text-muted-foreground" />
-                                            <Label className="text-xs text-muted-foreground">Italic</Label>
-                                        </div>
+                                                                            {/* Font Style Switch */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Italic className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Italic</Label>
+                                            </div>
                                         <Switch
                                             checked={activeText.fontStyle === 'italic'}
                                             onCheckedChange={(checked) => handleTextChange('fontStyle', checked ? 'italic' : 'normal')}
@@ -564,12 +639,12 @@ export default function EditorPage() {
 
 
                                     <div className="flex flex-col gap-2 w-full">
-                                        <Label className="text-xs text-muted-foreground">Color</Label>
+                                        <Label className="text-xs text-[var(--muted-foreground)]">Color</Label>
                                         <div className="flex items-center gap-2 w-full relative">
                                             <Popover>
                                                 <PopoverTrigger asChild>
                                                     <span
-                                                        className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-primary/10 absolute left-2 top-1/2 -translate-y-1/2"
+                                                        className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
                                                         style={{ backgroundColor: activeText.color }}
                                                     />
                                                 </PopoverTrigger>
@@ -595,78 +670,90 @@ export default function EditorPage() {
 
                                     {/* Typography Controls */}
                                     <div className="flex flex-col gap-3">
-                                        <Slider
-                                            label="Font Weight"
-                                            value={[parseInt(activeText.fontWeight?.toString() ?? '700')]}
-                                            onValueChange={([val]) => handleTextChange('fontWeight', val.toString())}
-                                            min={100}
-                                            max={900}
-                                            step={100}
-                                        />
-                                        <Slider
-                                            label="Font Size"
-                                            value={[activeText.fontSize]}
-                                            onValueChange={([val]) => handleTextChange('fontSize', val)}
-                                            max={1000}
-                                            step={10}
-                                        />
-                                        <Slider
-                                            label="Opacity"
-                                            value={[activeText.opacity ?? 1]}
-                                            onValueChange={([val]) => handleTextChange('opacity', val)}
-                                            max={1}
-                                            step={0.01}
-                                        />
-                                        <Slider
-                                            label="Letter Spacing"
-                                            value={[activeText.letterSpacing ?? 0]}
-                                            onValueChange={([val]) => handleTextChange('letterSpacing', val)}
-                                            max={50}
-                                            min={-50}
-                                            step={1}
-                                        />
-                                        <Slider
-                                            label="Line Height"
-                                            value={[activeText.lineHeight ?? 1.2]}
-                                            onValueChange={([val]) => handleTextChange('lineHeight', val)}
-                                            max={3}
-                                            min={-3}
-                                            step={0.1}
-                                        />
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-[var(--muted-foreground)]">Font Weight: {parseInt(activeText.fontWeight?.toString() ?? '700')}</Label>
+                                            <Slider
+                                                value={[parseInt(activeText.fontWeight?.toString() ?? '700')]}
+                                                onValueChange={([val]) => handleTextChange('fontWeight', val.toString())}
+                                                min={100}
+                                                max={900}
+                                                step={100}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-[var(--muted-foreground)]">Font Size: {activeText.fontSize}px</Label>
+                                            <Slider
+                                                value={[activeText.fontSize]}
+                                                onValueChange={([val]) => handleTextChange('fontSize', val)}
+                                                max={1000}
+                                                step={10}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-[var(--muted-foreground)]">Opacity: {Math.round((activeText.opacity ?? 1) * 100)}%</Label>
+                                            <Slider
+                                                value={[activeText.opacity ?? 1]}
+                                                onValueChange={([val]) => handleTextChange('opacity', val)}
+                                                max={1}
+                                                step={0.01}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-[var(--muted-foreground)]">Letter Spacing: {activeText.letterSpacing ?? 0}px</Label>
+                                            <Slider
+                                                value={[activeText.letterSpacing ?? 0]}
+                                                onValueChange={([val]) => handleTextChange('letterSpacing', val)}
+                                                max={50}
+                                                min={-50}
+                                                step={1}
+                                            />
+                                        </div>
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-[var(--muted-foreground)]">Line Height: {activeText.lineHeight ?? 1.2}</Label>
+                                            <Slider
+                                                value={[activeText.lineHeight ?? 1.2]}
+                                                onValueChange={([val]) => handleTextChange('lineHeight', val)}
+                                                max={3}
+                                                min={-3}
+                                                step={0.1}
+                                            />
+                                        </div>
                                     </div>
 
                                     <Separator />
 
                                     <div className="flex flex-col gap-2 w-full">
-                                        <Label className="text-xs text-muted-foreground mb-1">Text Position</Label>
-                                        
-                                                    <Slider
-                                                        label="Horizontal (X)"
-                                                        value={[activeText.sliderX ?? 0]}
-                                                        onValueChange={([val]) => handleTextChange('sliderX', val)}
-                                                        min={-100}
-                                                        max={100}
-                                                        step={1}
-                                                    />
-                                                    <Slider
-                                                        label="Vertical (Y)"
-                                                        value={[activeText.sliderY ?? 0]}
-                                                        onValueChange={([val]) => handleTextChange('sliderY', val)}
-                                                        min={-100}
-                                                        max={100}
-                                                        step={1}
-                                                    />
+                                        <Label className="text-xs text-[var(--muted-foreground)] mb-1">Text Position</Label>
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-[var(--muted-foreground)]">Horizontal (X): {activeText.sliderX ?? 0}</Label>
+                                            <Slider
+                                                value={[activeText.sliderX ?? 0]}
+                                                onValueChange={([val]) => handleTextChange('sliderX', val)}
+                                                min={-100}
+                                                max={100}
+                                                step={1}
+                                            />
                                         </div>
+                                        <div className="flex flex-col gap-2">
+                                            <Label className="text-xs text-[var(--muted-foreground)]">Vertical (Y): {activeText.sliderY ?? 0}</Label>
+                                            <Slider
+                                                value={[activeText.sliderY ?? 0]}
+                                                onValueChange={([val]) => handleTextChange('sliderY', val)}
+                                                min={-100}
+                                                max={100}
+                                                step={1}
+                                            />
+                                        </div>
+                                    </div>
 
                                     <Separator />
 
                                     {/* Text Shadow Section */}
-                                    <Separator />
                                     <div className="flex flex-col gap-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <Layers className="w-4 h-4 text-muted-foreground" />
-                                                <Label className="text-xs text-muted-foreground">Text Shadow</Label>
+                                                <Layers className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Text Shadow</Label>
                                             </div>
                                             <Switch
                                                 checked={activeText.textShadowEnabled ?? false}
@@ -677,15 +764,15 @@ export default function EditorPage() {
                                         {activeText.textShadowEnabled && (
                                             <>
                                                 {/* Shadow Color */}
-                                                <div className="flex flex-col gap-2">
-                                                    <Label className="text-xs text-muted-foreground">Shadow Color</Label>
-                                                    <div className="flex items-center gap-2 w-full relative">
-                                                        <Popover>
-                                                            <PopoverTrigger asChild>
-                                                                <span
-                                                                    className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-primary/10 absolute left-2 top-1/2 -translate-y-1/2"
-                                                                    style={{ backgroundColor: activeText.textShadowColor ?? '#000000' }}
-                                                                />
+                                                                                                    <div className="flex flex-col gap-2">
+                                                        <Label className="text-xs text-[var(--muted-foreground)]">Shadow Color</Label>
+                                                        <div className="flex items-center gap-2 w-full relative">
+                                                            <Popover>
+                                                                <PopoverTrigger asChild>
+                                                                    <span
+                                                                        className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                                        style={{ backgroundColor: activeText.textShadowColor ?? '#000000' }}
+                                                                    />
                                                             </PopoverTrigger>
                                                             <PopoverContent className="w-auto p-2" align="start">
                                                                 <HexColorPicker
@@ -709,114 +796,126 @@ export default function EditorPage() {
 
                                                 {/* Shadow Position and Blur */}
                                                 <div className="flex flex-col gap-3">
-                                                    <Slider
-                                                        label="Shadow X Offset"
-                                                        value={[activeText.textShadowOffsetX ?? 2]}
-                                                        onValueChange={([val]) => handleTextChange('textShadowOffsetX', val)}
-                                                        min={-20}
-                                                        max={20}
-                                                        step={1}
-                                                    />
-                                                    <Slider
-                                                        label="Shadow Y Offset"
-                                                        value={[activeText.textShadowOffsetY ?? 2]}
-                                                        onValueChange={([val]) => handleTextChange('textShadowOffsetY', val)}
-                                                        min={-20}
-                                                        max={20}
-                                                        step={1}
-                                                    />
-                                                    <Slider
-                                                        label="Shadow Blur"
-                                                        value={[activeText.textShadowBlur ?? 4]}
-                                                        onValueChange={([val]) => handleTextChange('textShadowBlur', val)}
-                                                        min={0}
-                                                        max={20}
-                                                        step={1}
-                                                    />
+                                                    <div className="flex flex-col gap-2">
+                                                        <Label className="text-xs text-[var(--muted-foreground)]">Shadow X Offset: {activeText.textShadowOffsetX ?? 2}px</Label>
+                                                        <Slider
+                                                            value={[activeText.textShadowOffsetX ?? 2]}
+                                                            onValueChange={([val]) => handleTextChange('textShadowOffsetX', val)}
+                                                            min={-20}
+                                                            max={20}
+                                                            step={1}
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <Label className="text-xs text-[var(--muted-foreground)]">Shadow Y Offset: {activeText.textShadowOffsetY ?? 2}px</Label>
+                                                        <Slider
+                                                            value={[activeText.textShadowOffsetY ?? 2]}
+                                                            onValueChange={([val]) => handleTextChange('textShadowOffsetY', val)}
+                                                            min={-20}
+                                                            max={20}
+                                                            step={1}
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <Label className="text-xs text-[var(--muted-foreground)]">Shadow Blur: {activeText.textShadowBlur ?? 4}px</Label>
+                                                        <Slider
+                                                            value={[activeText.textShadowBlur ?? 4]}
+                                                            onValueChange={([val]) => handleTextChange('textShadowBlur', val)}
+                                                            min={0}
+                                                            max={20}
+                                                            step={1}
+                                                        />
+                                                    </div>
                                                 </div>
                                             </>
                                         )}
                                     </div>
 
                                     <Separator />
-
-                                    <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-8 text-xs">
-                                        <RefreshCw className="w-3 h-3 mr-1" />
-                                        Reset
-                                    </Button>
                                 </div>
                             )}
 
                             {activeTab === "image" && (
                                 <div className="flex flex-col gap-4">
-                                    <div className="flex flex-col gap-2">
-                                        <Label className="text-xs text-muted-foreground">Background</Label>
+                                    <div className="flex flex-col gap-4">
+                                        <Label className="text-xs text-[var(--muted-foreground)] font-medium">Background</Label>
                                         <div className="flex flex-col gap-3">
-                                            <Slider
-                                                label="Brightness"
-                                                value={[bgBrightness]}
-                                                onValueChange={([val]) => setBgBrightness(val)}
-                                                max={200}
-                                                step={1}
-                                            />
-                                            <Slider
-                                                label="Contrast"
-                                                value={[bgContrast]}
-                                                onValueChange={([val]) => setBgContrast(val)}
-                                                max={200}
-                                                step={1}
-                                            />
+                                            <div className="flex flex-col gap-2">
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Brightness: {bgBrightness}%</Label>
+                                                <Slider
+                                                    value={[bgBrightness]}
+                                                    onValueChange={([val]) => setBgBrightness(val)}
+                                                    max={200}
+                                                    step={1}
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-2">
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Contrast: {bgContrast}%</Label>
+                                                <Slider
+                                                    value={[bgContrast]}
+                                                    onValueChange={([val]) => setBgContrast(val)}
+                                                    max={200}
+                                                    step={1}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
                                     <Separator />
 
-                                    <div className="flex flex-col gap-2">
-                                        <Label className="text-xs text-muted-foreground">Foreground</Label>
+                                    <div className="flex flex-col gap-4">
+                                        <Label className="text-xs text-[var(--muted-foreground)] font-medium">Foreground</Label>
                                         <div className="flex flex-col gap-3">
-                                            <Slider
-                                                label="Brightness"
-                                                value={[fgBrightness]}
-                                                onValueChange={([val]) => setFgBrightness(val)}
-                                                max={200}
-                                                step={1}
-                                            />
-                                            <Slider
-                                                label="Contrast"
-                                                value={[fgContrast]}
-                                                onValueChange={([val]) => setFgContrast(val)}
-                                                max={200}
-                                                step={1}
-                                            />
+                                            <div className="flex flex-col gap-2">
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Brightness: {fgBrightness}%</Label>
+                                                <Slider
+                                                    value={[fgBrightness]}
+                                                    onValueChange={([val]) => setFgBrightness(val)}
+                                                    max={200}
+                                                    step={1}
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-2">
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Contrast: {fgContrast}%</Label>
+                                                <Slider
+                                                    value={[fgContrast]}
+                                                    onValueChange={([val]) => setFgContrast(val)}
+                                                    max={200}
+                                                    step={1}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-
-                                    <Button variant="outline" size="sm" onClick={resetImageEdits} className="w-full h-8 text-xs">
-                                        <RefreshCw className="w-3 h-3 mr-1" />
-                                        Reset
-                                    </Button>
                                 </div>
                             )}
                         </div>
-                        {/* Sticky Reset Button for Text Tab on Mobile */}
-                        {activeTab === "text" && (
-                            <div className="lg:hidden sticky bottom-0 left-0 w-full bg-secondary/90 p-2 z-20 rounded-b-2xl border-t border-primary/10 flex">
-                                <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-8 text-xs">
+
+                        {/* Sticky Reset Button */}
+                        <div className="flex-shrink-0 p-3 pt-2 border-t border-[var(--border)] bg-[var(--secondary)]/30">
+                            {activeTab === "text" && (
+                                <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-9 text-xs bg-background hover:bg-accent">
                                     <RefreshCw className="w-3 h-3 mr-1" />
-                                    Reset
+                                    Reset Text
                                 </Button>
-                            </div>
-                        )}
+                            )}
+                            {activeTab === "image" && (
+                                <Button variant="outline" size="sm" onClick={resetImageEdits} className="w-full h-9 text-xs bg-background hover:bg-accent">
+                                    <RefreshCw className="w-3 h-3 mr-1" />
+                                    Reset Image
+                                </Button>
+                            )}
+                        </div>
+
                     </section>
                 </aside>
 
                 {/* Main Canvas Area - Full Width */}
                 {!image ? (
                     /* Full Page Upload Section */
-                    <div className="flex flex-col h-[300px] sm:h-[400px] md:h-[500px] lg:h-full w-full mx-auto items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border border-primary/10 overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
-                        <Upload className="w-12 h-12 md:w-16 md:h-16 text-primary mb-4 md:mb-6" />
+                    <div className="flex flex-col h-[300px] sm:h-[400px] md:h-[500px] lg:h-full w-full mx-auto items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius)] border border-[var(--border)] overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
+                        <Upload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
-                        <p className="text-muted-foreground mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
+                        <p className="text-[var(--muted-foreground)] mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
                         <Button onClick={() => document.getElementById('image-upload')?.click()} className="h-10 w-auto text-xs flex items-center gap-2">
                             <Upload className="w-4 h-4" />
                             Upload Image
@@ -824,7 +923,7 @@ export default function EditorPage() {
                         <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     </div>
                 ) : (
-                    <section className="flex flex-col w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-full items-center justify-center bg-secondary/50 backdrop-blur-sm rounded-2xl border border-primary/10 overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
+                    <section className="flex flex-col w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius)] border border-[var(--border)] overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
                         {loading && (
                             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
                                 <span className="text-lg font-semibold text-white animate-pulse">Processing image...</span>
@@ -838,7 +937,7 @@ export default function EditorPage() {
                             />
                         </div>
                         {/* Floating Download Actions */}
-                        <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-8 z-40 bg-white dark:bg-secondary/90 rounded-2xl shadow-lg border border-primary/10 px-2 py-1 gap-2 items-center" style={{ minWidth: '320px' }}>
+                        <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-8 z-40 bg-white dark:bg-[var(--secondary)]/90 rounded-[var(--radius)] shadow-lg border border-[var(--border)] p-1 gap-1.5 items-center">
                             <Button onClick={downloadImage} className="h-9 text-xs flex items-center gap-2">
                                 <Download className="w-4 h-4" />
                                 Download
@@ -862,30 +961,30 @@ export default function EditorPage() {
                     </section>
                 )}
 
-                {/* Right Sidebar - Position Control (Desktop only) */}
-                <aside className="hidden lg:flex flex-col gap-2 w-full max-w-full lg:max-w-[205px] h-auto lg:h-full overflow-visible lg:overflow-hidden order-3">
-                    <div className="h-10 w-full bg-secondary/50 rounded-2xl flex items-center justify-center border border-primary/10">
-                        <ThemeSwitch />
-                    </div>
-                    {/* <div className="flex flex-col gap-2 w-full bg-secondary/50 rounded-2xl p-4 border border-primary/10"> */}
-                        {/* Filename display and edit */}
-                        {/* {image && ( */}
-                            <div className="flex flex-col gap-2 w-full bg-secondary/50 rounded-2xl p-4 border border-primary/10">
-                            <div className="mb-2">
-                                <label className="block text-xs text-muted-foreground mb-1">Filename</label>
-                                <input
-                                    type="text"
-                                    className="w-full rounded border px-2 py-1 text-xs bg-background border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/20"
-                                    value={downloadFilename.replace(/\.png$/, '')}
-                                    onChange={e => setDownloadFilename(e.target.value.replace(/\.[^/.]+$/, '') + '.png')}
-                                />
-                                <span className="block text-[10px] text-muted-foreground mt-1">.png</span>
-                            </div>
-                            </div>
-                        {/* )} */}
-                    {/* </div> */}
-                </aside>
+
             </div>
+
+            {/* Theme Modal for Desktop */}
+            {themeDrawerOpen && (
+                <>
+                    {/* Overlay */}
+                    <div
+                        className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-sm transition-opacity animate-fade-in"
+                        onClick={() => setThemeDrawerOpen(false)}
+                        aria-label="Close theme modal"
+                    />
+                    {/* Centered Modal */}
+                    <div
+                        className="fixed left-1/2 top-1/2 z-[1001] -translate-x-1/2 -translate-y-1/2 bg-[var(--background)]/95 rounded-[var(--radius)] shadow-2xl border border-[var(--border)] p-6 w-full max-w-sm flex flex-col items-center justify-center animate-fade-in"
+                        role="dialog"
+                        aria-modal="true"
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <h2 className="text-base font-semibold mb-4 text-center text-[var(--foreground)]/80">Change Theme</h2>
+                        <ThemeSwitch className="w-full max-w-[240px] mx-auto" />
+                    </div>
+                </>
+            )}
 
             <Toaster />
         </div>
