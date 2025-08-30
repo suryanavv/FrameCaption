@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import SplashScreen from "@/components/SplashScreen";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "FrameCaption - Text Overlay Image Editor",
@@ -16,12 +22,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
       <head>
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
       </head>
       <body
-        className="font-onest antialiased min-h-screen bg-background"
+        className="font-sans antialiased min-h-screen bg-background"
       >
         <ThemeProvider
           attribute="class"
