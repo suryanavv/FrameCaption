@@ -54,8 +54,12 @@ export interface TextSettings {
         textShadowOffsetY = 2,
         textShadowBlur = 4,
       } = settings;
+
+      // Convert percentage to actual pixel size based on canvas width
+      const actualFontSize = (fontSize / 100) * ctx.canvas.width;
+
       ctx.save();
-      ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${font}`;
+      ctx.font = `${fontStyle} ${fontWeight} ${actualFontSize}px ${font}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.globalAlpha = opacity;
@@ -68,7 +72,7 @@ export interface TextSettings {
       // Letter spacing and line height
       const lines = content.split('\n');
       let maxWidth = 0;
-      const totalHeight = lines.length * fontSize * lineHeight;
+      const totalHeight = lines.length * actualFontSize * lineHeight;
       // Calculate bounding box for indicator
       for (let j = 0; j < lines.length; j++) {
         let lineWidth = 0;
@@ -83,7 +87,7 @@ export interface TextSettings {
       }
       // Draw text
       for (let j = 0; j < lines.length; j++) {
-        const y = (j * fontSize * lineHeight) - (totalHeight / 2) + (fontSize * lineHeight) / 2;
+        const y = (j * actualFontSize * lineHeight) - (totalHeight / 2) + (actualFontSize * lineHeight) / 2;
         // Calculate line width (including letter spacing)
         let lineWidth = 0;
         if (letterSpacing) {

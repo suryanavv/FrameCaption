@@ -1,95 +1,30 @@
-// Onest is now the global app font
+// Curated selection of 15 fonts with excellent weight support
 import {
-  Bricolage_Grotesque,
-  Space_Mono,
-  Space_Grotesk,
-  Manrope,
+  Inter,
   Poppins,
   Montserrat,
-  Onest,
-  Instrument_Serif,
-  Inter,
-  DM_Serif_Display,
-  Lora,
-  Geist,
-  Geist_Mono,
-  Ms_Madi,
-  Funnel_Sans,
-  Funnel_Display,
-  // New fonts
-  Roboto,
-  Open_Sans,
-  Lato,
-  Merriweather,
   Playfair_Display,
-  Rubik,
-  Nunito,
+  Merriweather,
+  Lora,
+  Dancing_Script,
+  Caveat,
+  Fira_Mono,
   Oswald,
   Raleway,
   PT_Serif,
-  Cabin,
-  Quicksand,
-  Fira_Mono,
-  JetBrains_Mono,
-  // Handwritten/Script fonts
-  Dancing_Script,
+  Nunito,
+  Rubik,
   Pacifico,
-  Caveat,
-  Satisfy,
-  Indie_Flower,
-  Great_Vibes,
-  Shadows_Into_Light,
 } from "next/font/google";
 
-// Sans-serif fonts
-export const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
-  variable: "--font-bricolage",
-  display: 'swap',
-});
-
-export const funnelSans = Funnel_Sans({
-  subsets: ["latin"],
-  variable: "--font-funnel-sans",
-  display: 'swap',
-});
-
-export const funnelDisplay = Funnel_Display({
-  subsets: ["latin"],
-  variable: "--font-funnel-display",
-  display: 'swap',
-});
-
-export const geist = Geist({
-  subsets: ["latin"],
-  variable: "--font-geist",
-  display: 'swap',
-});
-
+// 1. Clean minimal sans-serif - Inter
 export const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
   display: 'swap',
 });
 
-export const manrope = Manrope({
-  subsets: ["latin"],
-  variable: "--font-manrope",
-  display: 'swap',
-});
-
-export const montserrat = Montserrat({
-  subsets: ["latin"],
-  variable: "--font-montserrat",
-  display: 'swap',
-});
-
-export const onest = Onest({
-  subsets: ["latin"],
-  variable: "--font-onest",
-  display: 'swap',
-});
-
+// 2. Warm sans-serif - Poppins
 export const poppins = Poppins({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
   subsets: ["latin"],
@@ -97,27 +32,28 @@ export const poppins = Poppins({
   display: 'swap',
 });
 
-export const spaceGrotesk = Space_Grotesk({
+// 3. Geometric sans-serif - Montserrat
+export const montserrat = Montserrat({
   subsets: ["latin"],
-  variable: "--font-space-grotesk",
+  variable: "--font-montserrat",
   display: 'swap',
 });
 
-// Serif fonts
-export const dmSerifDisplay = DM_Serif_Display({
+// 4. Elegant serif display - Playfair Display
+export const playfairDisplay = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-dm-serif-display",
-  weight: ["400"],
+  variable: "--font-playfair-display",
   display: 'swap',
 });
 
-export const instrumentSerif = Instrument_Serif({
-  weight: ["400"],
+// 5. Book serif - Merriweather
+export const merriweather = Merriweather({
   subsets: ["latin"],
-  variable: "--font-instrument-serif",
+  variable: "--font-merriweather",
   display: 'swap',
 });
 
+// 6. Formal serif - Lora
 export const lora = Lora({
   subsets: ["latin"],
   variable: "--font-lora",
@@ -125,143 +61,70 @@ export const lora = Lora({
   display: 'swap',
 });
 
-export const msMadi = Ms_Madi({
-  subsets: ["latin"],
-  variable: "--font-ms-madi",
-  weight: ["400"],
-  display: 'swap',
-});
-
-// Monospace fonts
-export const geistMono = Geist_Mono({
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-  subsets: ["latin"],
-  variable: "--font-geist-mono",
-  display: 'swap',
-});
-
-export const spaceMono = Space_Mono({
-  weight: ["400", "700"],
-  subsets: ["latin"],
-  variable: "--font-space-mono",
-  display: 'swap',
-});
-
-// New font exports
-export const roboto = Roboto({
-  subsets: ["latin"],
-  variable: "--font-roboto",
-  display: 'swap',
-});
-export const openSans = Open_Sans({
-  subsets: ["latin"],
-  variable: "--font-open-sans",
-  display: 'swap',
-});
-export const lato = Lato({
-  weight: ["100", "300", "400", "700", "900"],
-  subsets: ["latin"],
-  variable: "--font-lato",
-  display: 'swap',
-});
-export const merriweather = Merriweather({
-  subsets: ["latin"],
-  variable: "--font-merriweather",
-  display: 'swap',
-});
-export const playfairDisplay = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair-display",
-  display: 'swap',
-});
-export const rubik = Rubik({
-  subsets: ["latin"],
-  variable: "--font-rubik",
-  display: 'swap',
-});
-export const nunito = Nunito({
-  subsets: ["latin"],
-  variable: "--font-nunito",
-  display: 'swap',
-});
-export const oswald = Oswald({
-  subsets: ["latin"],
-  variable: "--font-oswald",
-  display: 'swap',
-});
-export const raleway = Raleway({
-  subsets: ["latin"],
-  variable: "--font-raleway",
-  display: 'swap',
-});
-export const ptSerif = PT_Serif({
-  weight: ["400", "700"],
-  subsets: ["latin"],
-  variable: "--font-pt-serif",
-  display: 'swap',
-});
-export const cabin = Cabin({
-  subsets: ["latin"],
-  variable: "--font-cabin",
-  display: 'swap',
-});
-export const quicksand = Quicksand({
-  subsets: ["latin"],
-  variable: "--font-quicksand",
-  display: 'swap',
-});
-export const firaMono = Fira_Mono({
-  weight: ["400", "500", "700"],
-  subsets: ["latin"],
-  variable: "--font-fira-mono",
-  display: 'swap',
-});
-export const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-  display: 'swap',
-});
-
-// Handwritten/Script fonts
+// 7. Elegant script - Dancing Script
 export const dancingScript = Dancing_Script({
   weight: ["400", "700"],
   subsets: ["latin"],
   variable: "--font-dancing-script",
   display: 'swap',
 });
-export const pacifico = Pacifico({
-  weight: ["400"],
-  subsets: ["latin"],
-  variable: "--font-pacifico",
-  display: 'swap',
-});
+
+// 8. Handwritten casual - Caveat
 export const caveat = Caveat({
   weight: ["400", "700"],
   subsets: ["latin"],
   variable: "--font-caveat",
   display: 'swap',
 });
-export const satisfy = Satisfy({
-  weight: ["400"],
+
+// 9. Monospace - Fira Mono
+export const firaMono = Fira_Mono({
+  weight: ["400", "500", "700"],
   subsets: ["latin"],
-  variable: "--font-satisfy",
+  variable: "--font-fira-mono",
   display: 'swap',
 });
-export const indieFlower = Indie_Flower({
-  weight: ["400"],
+
+// 10. Condensed sans - Oswald
+export const oswald = Oswald({
   subsets: ["latin"],
-  variable: "--font-indie-flower",
+  variable: "--font-oswald",
   display: 'swap',
 });
-export const greatVibes = Great_Vibes({
-  weight: ["400"],
+
+// 11. Calm sans-serif - Raleway
+export const raleway = Raleway({
   subsets: ["latin"],
-  variable: "--font-great-vibes",
+  variable: "--font-raleway",
   display: 'swap',
 });
-export const shadowsIntoLight = Shadows_Into_Light({
+
+// 12. Readable serif - PT Serif
+export const ptSerif = PT_Serif({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+  variable: "--font-pt-serif",
+  display: 'swap',
+});
+
+// 13. Rounded sans-serif - Nunito
+export const nunito = Nunito({
+  subsets: ["latin"],
+  variable: "--font-nunito",
+  display: 'swap',
+});
+
+// 14. Modern geometric - Rubik
+export const rubik = Rubik({
+  subsets: ["latin"],
+  variable: "--font-rubik",
+  display: 'swap',
+});
+
+// 15. Decorative script - Pacifico
+export const pacifico = Pacifico({
   weight: ["400"],
   subsets: ["latin"],
-  variable: "--font-shadows-into-light",
+  variable: "--font-pacifico",
   display: 'swap',
 });

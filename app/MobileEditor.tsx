@@ -13,57 +13,57 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
-import { poppins, inter, manrope, montserrat, geist, bricolage, funnelSans, funnelDisplay, onest, spaceGrotesk, dmSerifDisplay, instrumentSerif, lora, msMadi, geistMono, spaceMono, roboto, openSans, lato, merriweather, playfairDisplay, rubik, nunito, oswald, raleway, ptSerif, cabin, quicksand, firaMono, jetbrainsMono, dancingScript, pacifico, caveat, satisfy, indieFlower, greatVibes, shadowsIntoLight } from "@/components/fonts";
+import { inter, poppins, montserrat, playfairDisplay, merriweather, lora, dancingScript, caveat, firaMono, oswald, raleway, ptSerif, nunito, rubik, pacifico } from "@/components/fonts";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
 import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler";
 
-// Onest is now the global app font
+// Curated 15 fonts with excellent weight support for different styles
 const googleFonts = [
-    // Sans-serif fonts
-    { label: "Bricolage Grotesque", value: "Bricolage Grotesque", className: bricolage.variable },
-    { label: "Funnel Display", value: "Funnel Display", className: funnelDisplay.variable },
-    { label: "Funnel Sans", value: "Funnel Sans", className: funnelSans.variable },
-    { label: "Geist", value: "Geist", className: geist.variable },
-    { label: "Inter", value: "Inter", className: inter.variable },
-    { label: "Lato", value: "Lato", className: lato.variable },
-    { label: "Manrope", value: "Manrope", className: manrope.variable },
-    { label: "Montserrat", value: "Montserrat", className: montserrat.variable },
-    { label: "Nunito", value: "Nunito", className: nunito.variable },
-    { label: "Onest", value: "Onest", className: onest.variable },
-    { label: "Open Sans", value: "Open Sans", className: openSans.variable },
-    { label: "Oswald", value: "Oswald", className: oswald.variable },
-    { label: "Poppins", value: "Poppins", className: poppins.variable },
-    { label: "Quicksand", value: "Quicksand", className: quicksand.variable },
-    { label: "Raleway", value: "Raleway", className: raleway.variable },
-    { label: "Roboto", value: "Roboto", className: roboto.variable },
-    { label: "Rubik", value: "Rubik", className: rubik.variable },
-    { label: "Space Grotesk", value: "Space Grotesk", className: spaceGrotesk.variable },
-    
-    // Serif fonts
-    { label: "Cabin", value: "Cabin", className: cabin.variable },
-    { label: "DM Serif Display", value: "DM Serif Display", className: dmSerifDisplay.variable },
-    { label: "Instrument Serif", value: "Instrument Serif", className: instrumentSerif.variable },
-    { label: "Lora", value: "Lora", className: lora.variable },
-    { label: "Merriweather", value: "Merriweather", className: merriweather.variable },
-    { label: "Ms Madi", value: "Ms Madi", className: msMadi.variable },
-    { label: "Playfair Display", value: "Playfair Display", className: playfairDisplay.variable },
-    { label: "PT Serif", value: "PT Serif", className: ptSerif.variable },
-    
-    // Monospace fonts
-    { label: "Fira Mono", value: "Fira Mono", className: firaMono.variable },
-    { label: "Geist Mono", value: "Geist Mono", className: geistMono.variable },
-    { label: "JetBrains Mono", value: "JetBrains Mono", className: jetbrainsMono.variable },
-    { label: "Space Mono", value: "Space Mono", className: spaceMono.variable },
-    
-    // Handwritten/Script fonts
-    { label: "Caveat", value: "Caveat", className: caveat.variable },
-    { label: "Dancing Script", value: "Dancing Script", className: dancingScript.variable },
-    { label: "Great Vibes", value: "Great Vibes", className: greatVibes.variable },
-    { label: "Indie Flower", value: "Indie Flower", className: indieFlower.variable },
-    { label: "Pacifico", value: "Pacifico", className: pacifico.variable },
-    { label: "Satisfy", value: "Satisfy", className: satisfy.variable },
-    { label: "Shadows Into Light", value: "Shadows Into Light", className: shadowsIntoLight.variable },
+    // Clean minimal sans-serif
+    { label: "Inter", value: "Inter", className: inter.variable, weights: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
+
+    // Warm sans-serif
+    { label: "Poppins", value: "Poppins", className: poppins.variable, weights: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
+
+    // Geometric sans-serif
+    { label: "Montserrat", value: "Montserrat", className: montserrat.variable, weights: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
+
+    // Elegant serif display
+    { label: "Playfair Display", value: "Playfair Display", className: playfairDisplay.variable, weights: [400, 500, 600, 700, 800, 900] },
+
+    // Book serif
+    { label: "Merriweather", value: "Merriweather", className: merriweather.variable, weights: [300, 400, 700, 900] },
+
+    // Formal serif
+    { label: "Lora", value: "Lora", className: lora.variable, weights: [400, 500, 600, 700] },
+
+    // Elegant script
+    { label: "Dancing Script", value: "Dancing Script", className: dancingScript.variable, weights: [400, 500, 600, 700] },
+
+    // Handwritten casual
+    { label: "Caveat", value: "Caveat", className: caveat.variable, weights: [400, 500, 600, 700] },
+
+    // Monospace
+    { label: "Fira Mono", value: "Fira Mono", className: firaMono.variable, weights: [400, 500, 700] },
+
+    // Condensed sans
+    { label: "Oswald", value: "Oswald", className: oswald.variable, weights: [200, 300, 400, 500, 600, 700] },
+
+    // Calm sans-serif
+    { label: "Raleway", value: "Raleway", className: raleway.variable, weights: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
+
+    // Readable serif
+    { label: "PT Serif", value: "PT Serif", className: ptSerif.variable, weights: [400, 700] },
+
+    // Rounded sans-serif
+    { label: "Nunito", value: "Nunito", className: nunito.variable, weights: [200, 300, 400, 500, 600, 700, 800, 900] },
+
+    // Modern geometric
+    { label: "Rubik", value: "Rubik", className: rubik.variable, weights: [300, 400, 500, 600, 700, 800, 900] },
+
+    // Decorative script
+    { label: "Pacifico", value: "Pacifico", className: pacifico.variable, weights: [400] },
 ];
 
 interface MobileEditorProps {
@@ -102,6 +102,17 @@ interface MobileEditorProps {
     activeText: TextSettings;
     loading: boolean;
     setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+    devPerfStats: {
+        moduleCached: boolean;
+        moduleLoadMs?: number;
+        cacheHits: number;
+        lastImageBitmapMs?: number;
+        lastProcessMs?: number;
+        lastCompositeMs?: number;
+        lastTotalMs?: number;
+    } | null;
+    devPerfOpen: boolean;
+    setDevPerfOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 
@@ -114,7 +125,7 @@ export default function MobileEditor(props: MobileEditorProps) {
         bgContrast, setBgContrast, fgBrightness, setFgBrightness, fgContrast, setFgContrast,
         activeTab, setActiveTab, canvasRef, handleImageUpload, drawCanvas, drawCanvasForExport, handleTextChange,
         addText, deleteText, resetImageEdits, resetTextEdits,
-        tryAnotherImage, activeText, loading, generateUniqueFilename
+        tryAnotherImage, activeText, loading, generateUniqueFilename, devPerfStats, devPerfOpen, setDevPerfOpen
     } = props;
 
 
@@ -125,6 +136,7 @@ export default function MobileEditor(props: MobileEditorProps) {
 
     // Debounce ref for mobile slider performance
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
 
     // Optimized mobile text change handler with debouncing
     const handleMobileTextChange = useCallback((key: keyof TextSettings, value: TextSettings[keyof TextSettings]) => {
@@ -292,7 +304,7 @@ export default function MobileEditor(props: MobileEditorProps) {
             };
             return newTexts;
         });
-    }, [activeText.sliderX, activeText.sliderY, activeTextIndex, originalImage?.width, originalImage?.height]);
+    }, [activeText.sliderX, activeText.sliderY, activeTextIndex, originalImage, setTexts]);
 
     // Remove calculation of textBox, canvasCenterX, canvasCenterY, rangeX, rangeY, offsetX, offsetY, horizontalPercent, verticalPercent, handleHorizontalSlider, handleVerticalSlider, and all JSX for horizontal/vertical position sliders.
 
@@ -494,12 +506,13 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Font Size: {activeText.fontSize}px</Label>
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Font Size: {activeText.fontSize}%</Label>
                                                 <Slider
                                                     value={[activeText.fontSize]}
                                                     onValueChange={([val]) => handleMobileTextChange('fontSize', val)}
-                                                    max={1000}
-                                                    step={10}
+                                                    min={5}
+                                                    max={100}
+                                                    step={1}
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-2">
@@ -746,6 +759,35 @@ export default function MobileEditor(props: MobileEditorProps) {
                 </aside>
             </div>
             <Toaster />
+
+            {process.env.NODE_ENV === 'development' && (
+                <div className="fixed bottom-4 right-4 z-[9999] w-64 max-w-[80vw] rounded-md border border-[var(--border)] bg-[var(--background)]/95 backdrop-blur p-2 text-xs shadow-md">
+                    <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold">Dev Performance</span>
+                        <button onClick={() => setDevPerfOpen((v)=>!v)} className="px-2 py-0.5 rounded border hover:bg-[var(--secondary)]">{devPerfOpen ? 'Hide' : 'Show'}</button>
+                    </div>
+                    {devPerfOpen && (
+                        <div className="space-y-1">
+                        <div className="flex justify-between"><span>Fast Mode</span><span>ON</span></div>
+                        <div className="flex justify-between"><span>Device</span><span>Mobile</span></div>
+                        <div className="flex justify-between"><span>Module cached</span><span>{String(devPerfStats?.moduleCached)}</span></div>
+                        <div className="flex justify-between"><span>Module load</span><span>{Math.round(devPerfStats?.moduleLoadMs ?? 0)} ms</span></div>
+                        <div className="flex justify-between"><span>Cache hits</span><span>{devPerfStats?.cacheHits ?? 0}</span></div>
+                        <div className="flex justify-between"><span>ImageBitmap</span><span>{Math.round(devPerfStats?.lastImageBitmapMs ?? 0)} ms</span></div>
+                        <div className="flex justify-between"><span>Process (mask)</span><span>{Math.round(devPerfStats?.lastProcessMs ?? 0)} ms</span></div>
+                        <div className="flex justify-between"><span>Composite</span><span>{Math.round(devPerfStats?.lastCompositeMs ?? 0)} ms</span></div>
+                        <div className="flex justify-between"><span>Total</span><span>{Math.round(devPerfStats?.lastTotalMs ?? 0)} ms</span></div>
+                            {typeof (performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory !== 'undefined' && (
+                                <div className="pt-1 border-t mt-1">
+                                    <div className="flex justify-between"><span>JS Heap Used</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.usedJSHeapSize ?? 0) / 1024 / 1024)} MB</span></div>
+                                    <div className="flex justify-between"><span>JS Heap Total</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.totalJSHeapSize ?? 0) / 1024 / 1024)} MB</span></div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* In the JSX, add a hidden canvas for measuring */}
             <canvas ref={measureCanvasRef} style={{ display: 'none' }} />
         </div>
