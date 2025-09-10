@@ -101,6 +101,11 @@ const defaultTextSettings: TextSettings = {
     textShadowBlur: 4,
     // Layer position default
     onTop: false, // Default to behind foreground image
+    // Text background defaults
+    textBackgroundEnabled: false,
+    textBackgroundColor: '#ffffff',
+    textBackgroundOpacity: 0.7,
+    textBackgroundPadding: 8,
 };
 
 
@@ -114,8 +119,12 @@ export default function EditorPage() {
     const [activeTextIndex, setActiveTextIndex] = useState(0);
     const [bgBrightness, setBgBrightness] = useState(100);
     const [bgContrast, setBgContrast] = useState(100);
+    const [bgBlur, setBgBlur] = useState(0);
+    const [useCustomBg, setUseCustomBg] = useState(false);
+    const [customBgColor, setCustomBgColor] = useState('#ffffff');
     const [fgBrightness, setFgBrightness] = useState(100);
     const [fgContrast, setFgContrast] = useState(100);
+    const [fgBlur, setFgBlur] = useState(0);
     const [activeTab, setActiveTab] = useState<"text" | "image">("text");
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isMobile, setIsMobile] = useState(false);
@@ -203,8 +212,20 @@ export default function EditorPage() {
             canvas.height = originalImage.height;
 
             // Draw background
-            ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%)`;
-            ctx.drawImage(originalImage, 0, 0);
+            if (useCustomBg) {
+                // Draw custom colored background
+                ctx.fillStyle = customBgColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.filter = `${bgBlur > 0 ? `blur(${bgBlur}px)` : ''}`.trim();
+                if (bgBlur > 0) {
+                    // Apply blur to the colored background
+                    ctx.filter = `blur(${bgBlur}px)`;
+                }
+            } else {
+                // Draw original background with filters
+                ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%) ${bgBlur > 0 ? `blur(${bgBlur}px)` : ''}`.trim();
+                ctx.drawImage(originalImage, 0, 0);
+            }
             ctx.filter = 'none';
 
             // Separate texts by layer position
@@ -222,7 +243,7 @@ export default function EditorPage() {
             addTextToCanvas(ctx, centeredBehindTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
 
             // Draw foreground
-            ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
+            ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%) ${fgBlur > 0 ? `blur(${fgBlur}px)` : ''}`.trim();
             ctx.drawImage(foregroundImage, 0, 0);
             ctx.filter = 'none';
 
@@ -236,7 +257,7 @@ export default function EditorPage() {
             }));
             addTextToCanvas(ctx, centeredOnTopTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
         });
-    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast, activeTextIndex]);
+    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, bgBlur, useCustomBg, customBgColor, fgBrightness, fgContrast, fgBlur, activeTextIndex]);
 
     // Optimized export drawing function
     const drawCanvasForExport = useCallback(() => {
@@ -250,8 +271,18 @@ export default function EditorPage() {
         canvas.height = originalImage.height;
 
         // Draw background
-        ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%)`;
-        ctx.drawImage(originalImage, 0, 0);
+        if (useCustomBg) {
+            // Draw custom colored background
+            ctx.fillStyle = customBgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            if (bgBlur > 0) {
+                ctx.filter = `blur(${bgBlur}px)`;
+            }
+        } else {
+            // Draw original background with filters
+            ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%) ${bgBlur > 0 ? `blur(${bgBlur}px)` : ''}`.trim();
+            ctx.drawImage(originalImage, 0, 0);
+        }
         ctx.filter = 'none';
 
         // Separate texts by layer position
@@ -269,7 +300,7 @@ export default function EditorPage() {
         addTextToCanvas(ctx, centeredBehindTexts, undefined, false, texts, activeTextIndex); // Hide border indicator for export
 
         // Draw foreground
-        ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
+        ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%) ${fgBlur > 0 ? `blur(${fgBlur}px)` : ''}`.trim();
         ctx.drawImage(foregroundImage, 0, 0);
         ctx.filter = 'none';
 
@@ -281,8 +312,8 @@ export default function EditorPage() {
                 y: t.position.y
             }
         }));
-        addTextToCanvas(ctx, centeredOnTopTexts, undefined, false, texts, activeTextIndex); // Hide border indicator for export
-    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast, activeTextIndex]);
+            addTextToCanvas(ctx, centeredOnTopTexts, undefined, false, texts, activeTextIndex); // Hide border indicator for export
+    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, bgBlur, useCustomBg, customBgColor, fgBrightness, fgContrast, fgBlur, activeTextIndex]);
 
     useEffect(() => {
         drawCanvas();
@@ -369,8 +400,12 @@ export default function EditorPage() {
     const resetImageEdits = () => {
         setBgBrightness(100);
         setBgContrast(100);
+        setBgBlur(0);
+        setUseCustomBg(false);
+        setCustomBgColor('#ffffff');
         setFgBrightness(100);
         setFgContrast(100);
+        setFgBlur(0);
     };
 
     const resetTextEdits = () => {
@@ -476,10 +511,18 @@ export default function EditorPage() {
                 setBgBrightness={setBgBrightness}
                 bgContrast={bgContrast}
                 setBgContrast={setBgContrast}
+                bgBlur={bgBlur}
+                setBgBlur={setBgBlur}
+                useCustomBg={useCustomBg}
+                setUseCustomBg={setUseCustomBg}
+                customBgColor={customBgColor}
+                setCustomBgColor={setCustomBgColor}
                 fgBrightness={fgBrightness}
                 setFgBrightness={setFgBrightness}
                 fgContrast={fgContrast}
                 setFgContrast={setFgContrast}
+                fgBlur={fgBlur}
+                setFgBlur={setFgBlur}
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
                 canvasRef={canvasRef as React.RefObject<HTMLCanvasElement>}
@@ -849,6 +892,80 @@ export default function EditorPage() {
                                     </div>
 
                                     <Separator />
+
+                                    {/* Text Background Section */}
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Layers className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Text Background</Label>
+                                            </div>
+                                            <Switch
+                                                checked={activeText.textBackgroundEnabled ?? false}
+                                                onCheckedChange={(checked) => handleTextChange('textBackgroundEnabled', checked)}
+                                            />
+                                        </div>
+
+                                        {activeText.textBackgroundEnabled && (
+                                            <>
+                                                {/* Background Color */}
+                                                <div className="flex flex-col gap-2">
+                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Color</Label>
+                                                    <div className="flex items-center gap-2 w-full relative">
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <span
+                                                                    className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                                    style={{ backgroundColor: activeText.textBackgroundColor ?? '#ffffff' }}
+                                                                />
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-2" align="start">
+                                                                <HexColorPicker
+                                                                    color={activeText.textBackgroundColor ?? '#ffffff'}
+                                                                    onChange={(color) => handleTextChange('textBackgroundColor', color)}
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <Input
+                                                            className="pl-10 h-9 text-xs"
+                                                            type="text"
+                                                            value={(activeText.textBackgroundColor ?? '#ffffff').startsWith("#") ? (activeText.textBackgroundColor ?? '#ffffff') : `#${activeText.textBackgroundColor ?? '#ffffff'}`}
+                                                            placeholder="Background Color"
+                                                            onChange={(e) => {
+                                                                const color = e.target.value.startsWith("#") ? e.target.value : `#${e.target.value}`;
+                                                                handleTextChange('textBackgroundColor', color);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* Background Opacity */}
+                                                <div className="flex flex-col gap-2">
+                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Opacity: {Math.round((activeText.textBackgroundOpacity ?? 0.7) * 100)}%</Label>
+                                                    <Slider
+                                                        value={[activeText.textBackgroundOpacity ?? 0.7]}
+                                                        onValueChange={([val]) => handleTextChange('textBackgroundOpacity', val)}
+                                                        max={1}
+                                                        step={0.01}
+                                                    />
+                                                </div>
+
+                                                {/* Background Padding */}
+                                                <div className="flex flex-col gap-2">
+                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Padding: {activeText.textBackgroundPadding ?? 8}px</Label>
+                                                    <Slider
+                                                        value={[activeText.textBackgroundPadding ?? 8]}
+                                                        onValueChange={([val]) => handleTextChange('textBackgroundPadding', val)}
+                                                        min={0}
+                                                        max={50}
+                                                        step={1}
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    <Separator />
                                 </div>
                             )}
 
@@ -857,21 +974,79 @@ export default function EditorPage() {
                                     <div className="flex flex-col gap-4">
                                         <Label className="text-xs text-[var(--muted-foreground)] font-medium">Background</Label>
                                         <div className="flex flex-col gap-3">
-                                            <div className="flex flex-col gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Brightness: {bgBrightness}%</Label>
-                                                <Slider
-                                                    value={[bgBrightness]}
-                                                    onValueChange={([val]) => setBgBrightness(val)}
-                                                    max={200}
-                                                    step={1}
+                                            {/* Custom Background Toggle */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <MoveUp className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                    <Label className="text-xs text-[var(--muted-foreground)]">Custom Background</Label>
+                                                </div>
+                                                <Switch
+                                                    checked={useCustomBg}
+                                                    onCheckedChange={setUseCustomBg}
                                                 />
                                             </div>
+
+                                            {/* Custom Background Color Picker */}
+                                            {useCustomBg && (
+                                                <div className="flex flex-col gap-2 w-full">
+                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Color</Label>
+                                                    <div className="flex items-center gap-2 w-full relative">
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <span
+                                                                    className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                                    style={{ backgroundColor: customBgColor }}
+                                                                />
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-2" align="start">
+                                                                <HexColorPicker
+                                                                    color={customBgColor}
+                                                                    onChange={setCustomBgColor}
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <Input
+                                                            className="pl-10 h-9 text-xs"
+                                                            type="text"
+                                                            value={customBgColor}
+                                                            placeholder="Background Color"
+                                                            onChange={(e) => setCustomBgColor(e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Background Filters (only show when not using custom background) */}
+                                            {!useCustomBg && (
+                                                <>
+                                                    <div className="flex flex-col gap-2">
+                                                        <Label className="text-xs text-[var(--muted-foreground)]">Brightness: {bgBrightness}%</Label>
+                                                        <Slider
+                                                            value={[bgBrightness]}
+                                                            onValueChange={([val]) => setBgBrightness(val)}
+                                                            max={200}
+                                                            step={1}
+                                                        />
+                                                    </div>
+                                                    <div className="flex flex-col gap-2">
+                                                        <Label className="text-xs text-[var(--muted-foreground)]">Contrast: {bgContrast}%</Label>
+                                                        <Slider
+                                                            value={[bgContrast]}
+                                                            onValueChange={([val]) => setBgContrast(val)}
+                                                            max={200}
+                                                            step={1}
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {/* Blur (always available) */}
                                             <div className="flex flex-col gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Contrast: {bgContrast}%</Label>
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Blur: {bgBlur}px</Label>
                                                 <Slider
-                                                    value={[bgContrast]}
-                                                    onValueChange={([val]) => setBgContrast(val)}
-                                                    max={200}
+                                                    value={[bgBlur]}
+                                                    onValueChange={([val]) => setBgBlur(val)}
+                                                    max={50}
                                                     step={1}
                                                 />
                                             </div>
@@ -898,6 +1073,15 @@ export default function EditorPage() {
                                                     value={[fgContrast]}
                                                     onValueChange={([val]) => setFgContrast(val)}
                                                     max={200}
+                                                    step={1}
+                                                />
+                                            </div>
+                                            <div className="flex flex-col gap-2">
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Blur: {fgBlur}px</Label>
+                                                <Slider
+                                                    value={[fgBlur]}
+                                                    onValueChange={([val]) => setFgBlur(val)}
+                                                    max={50}
                                                     step={1}
                                                 />
                                             </div>

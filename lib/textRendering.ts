@@ -27,6 +27,11 @@ export interface TextSettings {
     textShadowBlur?: number;
     // Layer position property
     onTop?: boolean; // Whether text should be drawn on top of foreground image
+    // Text background properties
+    textBackgroundEnabled?: boolean;
+    textBackgroundColor?: string;
+    textBackgroundOpacity?: number;
+    textBackgroundPadding?: number;
   }
   
   export function addTextToCanvas(
@@ -53,6 +58,10 @@ export interface TextSettings {
         textShadowOffsetX = 2,
         textShadowOffsetY = 2,
         textShadowBlur = 4,
+        textBackgroundEnabled = false,
+        textBackgroundColor = '#ffffff',
+        textBackgroundOpacity = 0.7,
+        textBackgroundPadding = 8,
       } = settings;
 
       // Convert percentage to actual pixel size based on canvas width
@@ -69,10 +78,38 @@ export interface TextSettings {
       if (shadowOffsetY) ctx.shadowOffsetY = shadowOffsetY;
       ctx.translate(position.x, position.y);
       if (rotation) ctx.rotate((rotation * Math.PI) / 180);
+
       // Letter spacing and line height
       const lines = content.split('\n');
       let maxWidth = 0;
       const totalHeight = lines.length * actualFontSize * lineHeight;
+
+      // Calculate text dimensions for background
+      let textMaxWidth = 0;
+      for (let j = 0; j < lines.length; j++) {
+        let lineWidth = 0;
+        if (letterSpacing) {
+          for (const char of lines[j]) {
+            lineWidth += ctx.measureText(char).width + letterSpacing;
+          }
+        } else {
+          lineWidth = ctx.measureText(lines[j]).width;
+        }
+        if (lineWidth > textMaxWidth) textMaxWidth = lineWidth;
+      }
+
+      // Draw text background if enabled
+      if (textBackgroundEnabled && content.trim()) {
+        ctx.save();
+        ctx.globalAlpha = textBackgroundOpacity;
+        ctx.fillStyle = textBackgroundColor;
+        const bgWidth = textMaxWidth + (textBackgroundPadding * 2);
+        const bgHeight = totalHeight + (textBackgroundPadding * 2);
+        const bgX = -bgWidth / 2;
+        const bgY = -bgHeight / 2;
+        ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
+        ctx.restore();
+      }
       // Calculate bounding box for indicator
       for (let j = 0; j < lines.length; j++) {
         let lineWidth = 0;

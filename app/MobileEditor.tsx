@@ -81,10 +81,18 @@ interface MobileEditorProps {
     setBgBrightness: React.Dispatch<React.SetStateAction<number>>;
     bgContrast: number;
     setBgContrast: React.Dispatch<React.SetStateAction<number>>;
+    bgBlur: number;
+    setBgBlur: React.Dispatch<React.SetStateAction<number>>;
+    useCustomBg: boolean;
+    setUseCustomBg: React.Dispatch<React.SetStateAction<boolean>>;
+    customBgColor: string;
+    setCustomBgColor: React.Dispatch<React.SetStateAction<string>>;
     fgBrightness: number;
     setFgBrightness: React.Dispatch<React.SetStateAction<number>>;
     fgContrast: number;
     setFgContrast: React.Dispatch<React.SetStateAction<number>>;
+    fgBlur: number;
+    setFgBlur: React.Dispatch<React.SetStateAction<number>>;
     activeTab: "text" | "image";
     setActiveTab: React.Dispatch<React.SetStateAction<"text" | "image">>;
     canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -121,8 +129,8 @@ export default function MobileEditor(props: MobileEditorProps) {
     // Use props instead of local state/handlers
     const {
         image, originalImage, foregroundImage,
-        texts, setTexts, activeTextIndex, setActiveTextIndex, bgBrightness, setBgBrightness,
-        bgContrast, setBgContrast, fgBrightness, setFgBrightness, fgContrast, setFgContrast,
+        texts, setTexts, activeTextIndex, setActiveTextIndex,     bgBrightness, setBgBrightness,
+        bgContrast, setBgContrast, bgBlur, setBgBlur, useCustomBg, setUseCustomBg, customBgColor, setCustomBgColor, fgBrightness, setFgBrightness, fgContrast, setFgContrast, fgBlur, setFgBlur,
         activeTab, setActiveTab, canvasRef, handleImageUpload, drawCanvas, drawCanvasForExport, handleTextChange,
         addText, deleteText, resetImageEdits, resetTextEdits,
         tryAnotherImage, activeText, loading, generateUniqueFilename, devPerfStats, devPerfOpen, setDevPerfOpen
@@ -223,8 +231,20 @@ export default function MobileEditor(props: MobileEditorProps) {
 
             canvas.width = originalImage.width;
             canvas.height = originalImage.height;
-            ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%)`;
-            ctx.drawImage(originalImage, 0, 0);
+
+            // Draw background
+            if (useCustomBg) {
+                // Draw custom colored background
+                ctx.fillStyle = customBgColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                if (bgBlur > 0) {
+                    ctx.filter = `blur(${bgBlur}px)`;
+                }
+            } else {
+                // Draw original background with filters
+                ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%) ${bgBlur > 0 ? `blur(${bgBlur}px)` : ''}`.trim();
+                ctx.drawImage(originalImage, 0, 0);
+            }
             ctx.filter = 'none';
 
             // Separate texts by layer position
@@ -241,7 +261,7 @@ export default function MobileEditor(props: MobileEditorProps) {
             }));
             addTextToCanvas(ctx, centeredBehindTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
 
-            ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%)`;
+            ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%) ${fgBlur > 0 ? `blur(${fgBlur}px)` : ''}`.trim();
             ctx.drawImage(foregroundImage, 0, 0);
             ctx.filter = 'none';
 
@@ -255,7 +275,7 @@ export default function MobileEditor(props: MobileEditorProps) {
             }));
             addTextToCanvas(ctx, centeredOnTopTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
         });
-    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, fgBrightness, fgContrast, activeTextIndex, canvasRef]);
+    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, bgBlur, useCustomBg, customBgColor, fgBrightness, fgContrast, fgBlur, activeTextIndex, canvasRef]);
 
     useEffect(() => {
         localDrawCanvas();
@@ -655,34 +675,166 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                         </div>
                                                     </div>
                                                 </>
-                                            )}
+                                        )}
+                                    </div>
+
+                                    <Separator />
+
+                                    {/* Text Background Section */}
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Layers className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Text Background</Label>
+                                            </div>
+                                            <Switch
+                                                checked={activeText.textBackgroundEnabled ?? false}
+                                                onCheckedChange={(checked) => handleTextChange('textBackgroundEnabled', checked)}
+                                            />
                                         </div>
 
-                                        <Separator />
+                                        {activeText.textBackgroundEnabled && (
+                                            <>
+                                                {/* Background Color */}
+                                                <div className="flex flex-col gap-2">
+                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Color</Label>
+                                                    <div className="flex items-center gap-2 w-full relative">
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <span
+                                                                    className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                                    style={{ backgroundColor: activeText.textBackgroundColor ?? '#ffffff' }}
+                                                                />
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-2" align="start">
+                                                                <HexColorPicker
+                                                                    color={activeText.textBackgroundColor ?? '#ffffff'}
+                                                                    onChange={(color) => handleTextChange('textBackgroundColor', color)}
+                                                                />
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                        <Input
+                                                            className="pl-10 h-9 text-xs"
+                                                            type="text"
+                                                            value={(activeText.textBackgroundColor ?? '#ffffff').startsWith("#") ? (activeText.textBackgroundColor ?? '#ffffff') : `#${activeText.textBackgroundColor ?? '#ffffff'}`}
+                                                            placeholder="Background Color"
+                                                            onChange={(e) => {
+                                                                const color = e.target.value.startsWith("#") ? e.target.value : `#${e.target.value}`;
+                                                                handleTextChange('textBackgroundColor', color);
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
 
+                                                {/* Background Opacity */}
+                                                <div className="flex flex-col gap-2">
+                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Opacity: {Math.round((activeText.textBackgroundOpacity ?? 0.7) * 100)}%</Label>
+                                                    <Slider
+                                                        value={[activeText.textBackgroundOpacity ?? 0.7]}
+                                                        onValueChange={([val]) => handleMobileTextChange('textBackgroundOpacity', val)}
+                                                        max={1}
+                                                        step={0.01}
+                                                    />
+                                                </div>
 
+                                                {/* Background Padding */}
+                                                <div className="flex flex-col gap-2">
+                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Padding: {activeText.textBackgroundPadding ?? 8}px</Label>
+                                                    <Slider
+                                                        value={[activeText.textBackgroundPadding ?? 8]}
+                                                        onValueChange={([val]) => handleMobileTextChange('textBackgroundPadding', val)}
+                                                        min={0}
+                                                        max={50}
+                                                        step={1}
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
+
+                                    <Separator />
+
+
+                                </div>
                                 )}
                                 {activeTab === 'image' && (
                                     <div className="flex flex-col gap-4">
                                         <div className="flex flex-col gap-4">
                                             <Label className="text-xs text-[var(--muted-foreground)] font-medium">Background</Label>
                                             <div className="flex flex-col gap-3">
-                                                <div className="flex flex-col gap-2">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Brightness: {bgBrightness}%</Label>
-                                                    <Slider
-                                                        value={[bgBrightness]}
-                                                        onValueChange={([val]) => setBgBrightness(val)}
-                                                        max={200}
-                                                        step={1}
+                                                {/* Custom Background Toggle */}
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <MoveUp className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                        <Label className="text-xs text-[var(--muted-foreground)]">Custom Background</Label>
+                                                    </div>
+                                                    <Switch
+                                                        checked={useCustomBg}
+                                                        onCheckedChange={setUseCustomBg}
                                                     />
                                                 </div>
+
+                                                {/* Custom Background Color Picker */}
+                                                {useCustomBg && (
+                                                    <div className="flex flex-col gap-2 w-full">
+                                                        <Label className="text-xs text-[var(--muted-foreground)]">Background Color</Label>
+                                                        <div className="flex items-center gap-2 w-full relative">
+                                                            <Popover>
+                                                                <PopoverTrigger asChild>
+                                                                    <span
+                                                                        className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                                        style={{ backgroundColor: customBgColor }}
+                                                                    />
+                                                                </PopoverTrigger>
+                                                                <PopoverContent className="w-auto p-2" align="start">
+                                                                    <HexColorPicker
+                                                                        color={customBgColor}
+                                                                        onChange={setCustomBgColor}
+                                                                    />
+                                                                </PopoverContent>
+                                                            </Popover>
+                                                            <Input
+                                                                className="pl-10 h-9 text-xs"
+                                                                type="text"
+                                                                value={customBgColor}
+                                                                placeholder="Background Color"
+                                                                onChange={(e) => setCustomBgColor(e.target.value)}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Background Filters (only show when not using custom background) */}
+                                                {!useCustomBg && (
+                                                    <>
+                                                        <div className="flex flex-col gap-2">
+                                                            <Label className="text-xs text-[var(--muted-foreground)]">Brightness: {bgBrightness}%</Label>
+                                                            <Slider
+                                                                value={[bgBrightness]}
+                                                                onValueChange={([val]) => setBgBrightness(val)}
+                                                                max={200}
+                                                                step={1}
+                                                            />
+                                                        </div>
+                                                        <div className="flex flex-col gap-2">
+                                                            <Label className="text-xs text-[var(--muted-foreground)]">Contrast: {bgContrast}%</Label>
+                                                            <Slider
+                                                                value={[bgContrast]}
+                                                                onValueChange={([val]) => setBgContrast(val)}
+                                                                max={200}
+                                                                step={1}
+                                                            />
+                                                        </div>
+                                                    </>
+                                                )}
+
+                                                {/* Blur (always available) */}
                                                 <div className="flex flex-col gap-2">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Contrast: {bgContrast}%</Label>
+                                                    <Label className="text-xs text-[var(--muted-foreground)]">Blur: {bgBlur}px</Label>
                                                     <Slider
-                                                        value={[bgContrast]}
-                                                        onValueChange={([val]) => setBgContrast(val)}
-                                                        max={200}
+                                                        value={[bgBlur]}
+                                                        onValueChange={([val]) => setBgBlur(val)}
+                                                        max={50}
                                                         step={1}
                                                     />
                                                 </div>
@@ -709,6 +861,15 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                         value={[fgContrast]}
                                                         onValueChange={([val]) => setFgContrast(val)}
                                                         max={200}
+                                                        step={1}
+                                                    />
+                                                </div>
+                                                <div className="flex flex-col gap-2">
+                                                    <Label className="text-xs text-[var(--muted-foreground)]">Blur: {fgBlur}px</Label>
+                                                    <Slider
+                                                        value={[fgBlur]}
+                                                        onValueChange={([val]) => setFgBlur(val)}
+                                                        max={50}
                                                         step={1}
                                                     />
                                                 </div>
