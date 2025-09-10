@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, GripVertical, Italic, Layers, MoveUp } from 'lucide-react';
+import { IconDownload, IconUpload, IconRefresh, IconTrash, IconPhoto, IconTypography, IconGripVertical, IconItalic, IconLayersIntersect, IconArrowNarrowUp, IconBackground } from '@tabler/icons-react';
 import { removeImageBackground } from '@/lib/backgroundRemoval';
 import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -576,14 +576,14 @@ export default function EditorPage() {
                                 value={"text"}
                                 className="flex-1 text-xs border border-[var(--border)] p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 cursor-pointer rounded-[var(--radius-sm)]"
                             >
-                                <Type className="w-2.5 h-2.5" />
+                                <IconTypography className="w-2.5 h-2.5 mb-0.5" />
                                 <span className="text-[0.625rem]">Text</span>
                             </TabsTrigger>
                             <TabsTrigger
                                 value={"image"}
                                 className="flex-1 text-xs border border-[var(--border)] p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 cursor-pointer rounded-[var(--radius-sm)]"
                             >
-                                <ImageIcon className="w-2.5 h-2.5" />
+                                <IconPhoto className="w-2.5 h-2.5 mb-0.5" />
                                 <span className="text-[0.625rem]">Image</span>
                             </TabsTrigger>
                         </TabsList>
@@ -625,12 +625,12 @@ export default function EditorPage() {
                                                     >
                                                         <div className="flex items-center gap-1">
                                                             {/* Desktop: show grip and up/down buttons */}
-                                                            <span className="hidden lg:inline-flex items-center cursor-grab mr-1 select-none"><GripVertical className="w-4 h-4 opacity-60" /></span>
+                                                            <span className="hidden lg:inline-flex items-center cursor-grab mr-1 select-none"><IconGripVertical className="w-4 h-4 opacity-60" /></span>
                                                             <span className="truncate text-xs" style={{ fontFamily: text.font }}>{text.content}</span>
                                                         </div>
                                                         <div className="flex items-center gap-1">
                                                             <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteText(originalIndex) }} className="h-5 w-5">
-                                                                <Trash2 className="w-3 h-3" />
+                                                                <IconTrash className="w-3 h-3" />
                                                             </Button>
                                                         </div>
                                                     </div>
@@ -644,7 +644,7 @@ export default function EditorPage() {
                                                                             {/* Layer Position Switch */}
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <MoveUp className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <IconArrowNarrowUp className="w-4 h-4 text-[var(--muted-foreground)]" />
                                                 <Label className="text-xs text-[var(--muted-foreground)]">On Top</Label>
                                             </div>
                                         <Switch
@@ -685,7 +685,7 @@ export default function EditorPage() {
                                                                             {/* Font Style Switch */}
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <Italic className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <IconItalic className="w-4 h-4 text-[var(--muted-foreground)]" />
                                                 <Label className="text-xs text-[var(--muted-foreground)]">Italic</Label>
                                             </div>
                                         <Switch
@@ -812,7 +812,7 @@ export default function EditorPage() {
                                     <div className="flex flex-col gap-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <Layers className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <IconLayersIntersect className="w-4 h-4 text-[var(--muted-foreground)]" />
                                                 <Label className="text-xs text-[var(--muted-foreground)]">Text Shadow</Label>
                                             </div>
                                             <Switch
@@ -897,7 +897,7 @@ export default function EditorPage() {
                                     <div className="flex flex-col gap-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <Layers className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <IconBackground className="w-4 h-4 text-[var(--muted-foreground)]" />
                                                 <Label className="text-xs text-[var(--muted-foreground)]">Text Background</Label>
                                             </div>
                                             <Switch
@@ -977,7 +977,7 @@ export default function EditorPage() {
                                             {/* Custom Background Toggle */}
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
-                                                    <MoveUp className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                    <IconBackground className="w-4 h-4 text-[var(--muted-foreground)]" />
                                                     <Label className="text-xs text-[var(--muted-foreground)]">Custom Background</Label>
                                                 </div>
                                                 <Switch
@@ -1095,13 +1095,13 @@ export default function EditorPage() {
                         <div className="flex-shrink-0 p-3 pt-2 border-t border-[var(--border)] bg-[var(--secondary)]/30">
                             {activeTab === "text" && (
                                 <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-9 text-xs bg-background hover:bg-accent">
-                                    <RefreshCw className="w-3 h-3 mr-1" />
+                                    <IconRefresh className="w-3 h-3 mr-1" />
                                     Reset Text
                                 </Button>
                             )}
                             {activeTab === "image" && (
                                 <Button variant="outline" size="sm" onClick={resetImageEdits} className="w-full h-9 text-xs bg-background hover:bg-accent">
-                                    <RefreshCw className="w-3 h-3 mr-1" />
+                                    <IconRefresh className="w-3 h-3 mr-1" />
                                     Reset Image
                                 </Button>
                             )}
@@ -1114,11 +1114,11 @@ export default function EditorPage() {
                 {!image ? (
                     /* Full Page Upload Section */
                     <div className="flex flex-col h-[300px] sm:h-[400px] md:h-[500px] lg:h-full w-full mx-auto items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border border-[var(--border)] overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
-                        <Upload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
+                        <IconUpload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
                         <p className="text-[var(--muted-foreground)] mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
                         <Button onClick={() => document.getElementById('image-upload')?.click()} className="h-10 w-auto text-xs flex items-center gap-2">
-                            <Upload className="w-4 h-4" />
+                            <IconUpload className="w-4 h-4" />
                             Upload Image
                         </Button>
                         <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
@@ -1140,22 +1140,22 @@ export default function EditorPage() {
                         {/* Floating Download Actions */}
                         <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-8 z-40 bg-white dark:bg-[var(--secondary)]/90 rounded-[var(--radius-sm)] shadow-lg border border-[var(--border)] p-1 gap-1.5 items-center">
                             <Button onClick={downloadImage} className="h-9 text-xs flex items-center gap-2">
-                                <Download className="w-4 h-4" />
+                                <IconDownload className="w-4 h-4" />
                                 Download
                             </Button>
                             <Button variant="outline" onClick={tryAnotherImage} className="h-9 flex items-center gap-2 text-xs">
-                                <ImageIcon className="w-4 h-4" />
+                                <IconPhoto className="w-4 h-4" />
                                 Try Another
                             </Button>
                         </div>
                         {/* Mobile/Tablet Download Actions */}
                         {/* <div className="flex lg:hidden w-full justify-center p-2 gap-2">
                             <Button onClick={downloadImage} className="h-9 text-xs flex-1 flex items-center gap-2">
-                                <Download className="w-4 h-4" />
+                                <IconDownload className="w-4 h-4" />
                                 Download
                             </Button>
                             <Button variant="outline" onClick={tryAnotherImage} className="h-9 text-xs flex-1 flex items-center gap-2">
-                                <ImageIcon className="w-4 h-4" />
+                                <IconPhoto className="w-4 h-4" />
                                 Try Another
                             </Button>
                         </div> */}

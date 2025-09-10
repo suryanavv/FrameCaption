@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, Upload, RefreshCw, Trash2, Image as ImageIcon, Type, Italic, Layers, MoveUp } from 'lucide-react';
+import { IconDownload, IconUpload, IconRefresh, IconTrash, IconPhoto, IconTypography, IconItalic, IconLayersIntersect, IconBackground, IconArrowNarrowUp } from '@tabler/icons-react';
 import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
@@ -345,11 +345,11 @@ export default function MobileEditor(props: MobileEditorProps) {
             <div className="sticky top-[3.25rem] px-2 z-20 mb-2 min-h-[350px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[350px] h-[32vh] max-h-[400px] sm:max-h-[500px] md:max-h-[600px] lg:max-h-[700px]">
                 {!image ? (
                     <div className="flex flex-col w-full h-full mx-auto items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-[var(--border)] overflow-hidden relative">
-                        <Upload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
+                        <IconUpload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
                         <p className="text-[var(--muted-foreground)] mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
                         <Button onClick={() => document.getElementById('image-upload')?.click()} className="h-10 w-auto text-xs flex items-center gap-2">
-                            <Upload className="w-4 h-4" />
+                            <IconUpload className="w-4 h-4" />
                             Upload Image
                         </Button>
                         <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
@@ -371,11 +371,11 @@ export default function MobileEditor(props: MobileEditorProps) {
                         {/* Mobile/Tablet Download Actions + Move Button */}
                         <div className="flex w-full justify-center p-2 gap-2 relative">
                             <Button onClick={downloadImageForMobile} className="h-9 text-xs flex-1 flex items-center gap-2">
-                                <Download className="w-4 h-4" />
+                                <IconDownload className="w-4 h-4" />
                                 Download
                             </Button>
                             <Button variant="outline" onClick={tryAnotherImage} className="h-9 text-xs flex-1 flex items-center gap-2">
-                                <ImageIcon className="w-4 h-4" />
+                                <IconPhoto className="w-4 h-4" />
                                 Try Another
                             </Button>
                         </div>
@@ -415,7 +415,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
                                                                 </Button>
                                                                 <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteText(originalIndex) }} className="h-5 w-5">
-                                                                    <Trash2 className="w-3 h-3" />
+                                                                    <IconTrash className="w-3 h-3" />
                                                                 </Button>
                                                             </div>
                                                         </div>
@@ -429,7 +429,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                         {/* Layer Position Switch */}
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <MoveUp className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <IconArrowNarrowUp className="w-4 h-4 text-[var(--muted-foreground)]" />
                                                 <Label className="text-xs text-[var(--muted-foreground)]">On Top</Label>
                                             </div>
                                             <Switch
@@ -470,7 +470,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                         {/* Font Style Switch */}
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <Italic className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <IconItalic className="w-4 h-4 text-[var(--muted-foreground)]" />
                                                 <Label className="text-xs text-[var(--muted-foreground)]">Italic</Label>
                                             </div>
                                             <Switch
@@ -599,7 +599,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                         <div className="flex flex-col gap-3">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
-                                                    <Layers className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                    <IconLayersIntersect className="w-4 h-4 text-[var(--muted-foreground)]" />
                                                     <Label className="text-xs text-[var(--muted-foreground)]">Text Shadow</Label>
                                                 </div>
                                                 <Switch
@@ -684,7 +684,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                     <div className="flex flex-col gap-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <Layers className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                <IconBackground className="w-4 h-4 text-[var(--muted-foreground)]" />
                                                 <Label className="text-xs text-[var(--muted-foreground)]">Text Background</Label>
                                             </div>
                                             <Switch
@@ -765,7 +765,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 {/* Custom Background Toggle */}
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-2">
-                                                        <MoveUp className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                                        <IconBackground className="w-4 h-4 text-[var(--muted-foreground)]" />
                                                         <Label className="text-xs text-[var(--muted-foreground)]">Custom Background</Label>
                                                     </div>
                                                     <Switch
@@ -885,13 +885,13 @@ export default function MobileEditor(props: MobileEditorProps) {
                             <div className="flex-shrink-0 p-3 pt-2 border-t border-[var(--border)] bg-[var(--secondary)]/30">
                                 {activeTab === 'text' && (
                                     <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-9 text-xs bg-background hover:bg-accent">
-                                        <RefreshCw className="w-3 h-3 mr-1" />
+                                        <IconRefresh className="w-3 h-3 mr-1" />
                                         Reset Text
                                     </Button>
                                 )}
                                 {activeTab === 'image' && (
                                     <Button variant="outline" size="sm" onClick={resetImageEdits} className="w-full h-9 text-xs bg-background hover:bg-accent">
-                                        <RefreshCw className="w-3 h-3 mr-1" />
+                                        <IconRefresh className="w-3 h-3 mr-1" />
                                         Reset Image
                                     </Button>
                                 )}
@@ -904,14 +904,14 @@ export default function MobileEditor(props: MobileEditorProps) {
                                     value="text"
                                     className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)]"
                                 >
-                                    <Type className="w-2.5 h-2.5" />
+                                    <IconTypography className="w-2.5 h-2.5" />
                                     <span className="text-[0.625rem]">Text</span>
                                 </TabsTrigger>
                                 <TabsTrigger
                                     value="image"
                                     className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)]"
                                 >
-                                    <ImageIcon className="w-2.5 h-2.5" />
+                                    <IconPhoto className="w-2.5 h-2.5" />
                                     <span className="text-[0.625rem]">Image</span>
                                 </TabsTrigger>
                             </TabsList>
