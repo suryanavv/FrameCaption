@@ -671,7 +671,7 @@ export default function EditorPage() {
                                             <SelectTrigger className="w-full h-9 text-xs">
                                                 <SelectValue placeholder="Select font" />
                                             </SelectTrigger>
-                                            <SelectContent>
+                                            <SelectContent className="max-h-[300px] overflow-y-auto">
                                                 {googleFonts.map(f => (
                                                     <SelectItem key={f.value} value={f.value} className={f.className}>
                                                         <span style={{ fontFamily: f.value }} className="text-xs">{f.label}</span>

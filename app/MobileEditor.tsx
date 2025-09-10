@@ -145,6 +145,26 @@ export default function MobileEditor(props: MobileEditorProps) {
     // Debounce ref for mobile slider performance
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Dynamic viewport height for mobile browsers
+    const [viewportHeight, setViewportHeight] = useState('100vh');
+
+    // Calculate actual viewport height for mobile browsers
+    const updateViewportHeight = useCallback(() => {
+        // Small debounce to prevent excessive updates during rapid changes
+        const update = () => {
+            // Use visual viewport if available (better for mobile browsers)
+            if (typeof window !== 'undefined' && window.visualViewport) {
+                const height = window.visualViewport.height;
+                setViewportHeight(`${height}px`);
+            } else {
+                // Fallback to window.innerHeight
+                setViewportHeight(`${window.innerHeight}px`);
+            }
+        };
+
+        // Use requestAnimationFrame for smooth updates
+        requestAnimationFrame(update);
+    }, []);
 
     // Optimized mobile text change handler with debouncing
     const handleMobileTextChange = useCallback((key: keyof TextSettings, value: TextSettings[keyof TextSettings]) => {
@@ -288,6 +308,34 @@ export default function MobileEditor(props: MobileEditorProps) {
         return () => window.removeEventListener('resize', check);
     }, []);
 
+    // Handle dynamic viewport height for mobile browsers
+    useEffect(() => {
+        // Initial height calculation
+        updateViewportHeight();
+
+        // Listen for viewport changes
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', updateViewportHeight);
+            window.visualViewport.addEventListener('scroll', updateViewportHeight);
+        }
+
+        // Fallback listeners for browsers without visualViewport
+        window.addEventListener('resize', updateViewportHeight);
+        window.addEventListener('orientationchange', () => {
+            // Delay to allow orientation change to complete
+            setTimeout(updateViewportHeight, 100);
+        });
+
+        return () => {
+            if (window.visualViewport) {
+                window.visualViewport.removeEventListener('resize', updateViewportHeight);
+                window.visualViewport.removeEventListener('scroll', updateViewportHeight);
+            }
+            window.removeEventListener('resize', updateViewportHeight);
+            window.removeEventListener('orientationchange', updateViewportHeight);
+        };
+    }, [updateViewportHeight]);
+
     // Cleanup animation frames and debounce timeout on unmount
     useEffect(() => {
         return () => {
@@ -329,10 +377,13 @@ export default function MobileEditor(props: MobileEditorProps) {
     // Remove calculation of textBox, canvasCenterX, canvasCenterY, rangeX, rangeY, offsetX, offsetY, horizontalPercent, verticalPercent, handleHorizontalSlider, handleVerticalSlider, and all JSX for horizontal/vertical position sliders.
 
     return (
-        <div className="w-full h-screen bg-background overflow-hidden flex flex-col">
+        <div
+            className="w-full bg-background overflow-hidden flex flex-col"
+            style={{ height: viewportHeight }}
+        >
             {/* Sticky Header with gap and rounded corners */}
-            <div className="p-2">
-                <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-md rounded-[var(--radius-sm)] overflow-hidden border-b border-[var(--border)] w-full max-w-full mx-auto">
+            <div className="flex-shrink-0 p-2">
+                <header className="flex h-10 items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-md rounded-[var(--radius-sm)] overflow-hidden border-b border-[var(--border)] w-full max-w-full mx-auto">
                     <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                         <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
                         FrameCaption
@@ -341,10 +392,10 @@ export default function MobileEditor(props: MobileEditorProps) {
                 </header>
             </div>
 
-            {/* Sticky Canvas Area below header */}
-            <div className="sticky top-[3.25rem] px-2 z-20 mb-2 min-h-[350px] sm:min-h-[400px] md:min-h-[500px] lg:min-h-[350px] h-[32vh] max-h-[400px] sm:max-h-[500px] md:max-h-[600px] lg:max-h-[700px]">
+            {/* Flexible Canvas Area */}
+            <div className="flex-1 flex flex-col px-2 pb-2 min-h-0">
                 {!image ? (
-                    <div className="flex flex-col w-full h-full mx-auto items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-[var(--border)] overflow-hidden relative">
+                    <div className="flex flex-col flex-1 w-full mx-auto items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-[var(--border)] overflow-hidden relative">
                         <IconUpload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
                         <p className="text-[var(--muted-foreground)] mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
@@ -355,21 +406,21 @@ export default function MobileEditor(props: MobileEditorProps) {
                         <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     </div>
                 ) : (
-                    <section className="flex flex-col w-full h-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-[var(--border)] overflow-hidden relative">
+                    <section className="flex flex-col flex-1 w-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-[var(--border)] overflow-hidden relative min-h-0">
                         {loading && (
                             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
                                 <span className="text-lg font-semibold text-white animate-pulse">Processing image...</span>
                                 <span className="text-xs text-white/80 mt-2">This may take up to 15 seconds</span>
                             </div>
                         )}
-                        <div className="w-full h-full overflow-auto flex items-center justify-center">
+                        <div className="flex-1 w-full overflow-hidden flex items-center justify-center min-h-0">
                             <canvas
                                 ref={canvasRef}
                                 className="max-w-full max-h-full object-contain"
                             />
                         </div>
                         {/* Mobile/Tablet Download Actions + Move Button */}
-                        <div className="flex w-full justify-center p-2 gap-2 relative">
+                        <div className="flex-shrink-0 flex w-full justify-center p-2 gap-2 relative">
                             <Button onClick={downloadImageForMobile} className="h-9 text-xs flex-1 flex items-center gap-2">
                                 <IconDownload className="w-4 h-4" />
                                 Download
@@ -382,14 +433,33 @@ export default function MobileEditor(props: MobileEditorProps) {
                     </section>
                 )}
             </div>
-            {/* Sticky Tabs Content section (scrollable within) */}
-            <div className="flex-1 min-h-0 flex flex-col w-full px-2 pb-24 sticky top-[calc(3.25rem+32vh)] z-10">
-                <aside className="flex flex-col gap-1 w-full max-w-full h-full overflow-hidden">
-                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'text' | 'image')} className="flex flex-col items-center w-full h-full">
-                        {/* Tabs Content first */}
-                        <section className="w-full bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] flex flex-col min-h-[300px] border border-[var(--border)] mb-10">
-                            {/* Scrollable Content Area */}
-                            <div className="flex flex-col flex-1 min-h-0 overflow-y-auto no-scrollbar p-3">
+            {/* Flexible Tabs Content section */}
+            <div className="flex-1 flex flex-col px-2 pb-2 min-h-0">
+                <Tabs
+                    value={activeTab}
+                    onValueChange={(value) => setActiveTab(value as 'text' | 'image')}
+                    className="flex flex-col flex-1 w-full min-h-0"
+                >
+                    {/* Tabs Content first */}
+                    <TabsList className="flex-shrink-0 w-full flex items-center gap-1 h-10 rounded-[var(--radius-sm)]">
+                        <TabsTrigger
+                            value="text"
+                            className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)]"
+                        >
+                            <IconTypography className="w-2.5 h-2.5" />
+                            <span className="text-[0.625rem]">Text</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="image"
+                            className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)]"
+                        >
+                            <IconPhoto className="w-2.5 h-2.5" />
+                            <span className="text-[0.625rem]">Image</span>
+                        </TabsTrigger>
+                    </TabsList>
+                    <section className="flex-1 w-full mt-2 bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] flex flex-col border border-[var(--border)] min-h-0">
+                        {/* Scrollable Content Area */}
+                        <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar p-3 min-h-0">
                                 {activeTab === 'text' && (
                                     <div className="flex flex-col gap-4"> {/* Remove pb-14 */}
                                         {/* Text Layers */}
@@ -456,7 +526,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 <SelectTrigger className="w-full h-9 text-xs">
                                                     <SelectValue placeholder="Select font" />
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent className="max-h-[300px] overflow-y-auto">
                                                     {googleFonts.map(f => (
                                                         <SelectItem key={f.value} value={f.value} className={f.className}>
                                                             <span style={{ fontFamily: f.value }} className="text-xs">{f.label}</span>
@@ -880,9 +950,8 @@ export default function MobileEditor(props: MobileEditorProps) {
                                     </div>
                                 )}
                             </div>
-
-                            {/* Sticky Reset Button */}
-                            <div className="flex-shrink-0 p-3 pt-2 border-t border-[var(--border)] bg-[var(--secondary)]/30">
+                        {/* Fixed Reset Button */}
+                        <div className="flex-shrink-0 p-2 border-t border-[var(--border)] bg-[var(--secondary)]/30">
                                 {activeTab === 'text' && (
                                     <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-9 text-xs bg-background hover:bg-accent">
                                         <IconRefresh className="w-3 h-3 mr-1" />
@@ -897,31 +966,11 @@ export default function MobileEditor(props: MobileEditorProps) {
                                 )}
                             </div>
                         </section>
-                        {/* TabsList (tab buttons) sticky at bottom, but inside Tabs */}
-                        <div className="fixed bottom-0 left-0 w-full z-40 bg-[var(--background)] border-t border-[var(--border)] p-2">
-                            <TabsList className="w-full flex items-center gap-1 h-10 rounded-[var(--radius-sm)]">
-                                <TabsTrigger
-                                    value="text"
-                                    className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)]"
-                                >
-                                    <IconTypography className="w-2.5 h-2.5" />
-                                    <span className="text-[0.625rem]">Text</span>
-                                </TabsTrigger>
-                                <TabsTrigger
-                                    value="image"
-                                    className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)]"
-                                >
-                                    <IconPhoto className="w-2.5 h-2.5" />
-                                    <span className="text-[0.625rem]">Image</span>
-                                </TabsTrigger>
-                            </TabsList>
-                        </div>
-                    </Tabs>
-                </aside>
+                </Tabs>
             </div>
             <Toaster />
 
-            {process.env.NODE_ENV === 'development' && (
+            {/* {process.env.NODE_ENV === 'development' && (
                 <div className="fixed bottom-4 right-4 z-[9999] w-64 max-w-[80vw] rounded-md border border-[var(--border)] bg-[var(--background)]/95 backdrop-blur p-2 text-xs shadow-md">
                     <div className="flex items-center justify-between mb-1">
                         <span className="font-semibold">Dev Performance</span>
@@ -947,7 +996,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                         </div>
                     )}
                 </div>
-            )}
+            )} */}
 
             {/* In the JSX, add a hidden canvas for measuring */}
             <canvas ref={measureCanvasRef} style={{ display: 'none' }} />
