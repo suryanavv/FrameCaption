@@ -1117,7 +1117,7 @@ export default function EditorPage() {
                         <IconUpload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
                         <p className="text-[var(--muted-foreground)] mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
-                        <Button onClick={() => document.getElementById('image-upload')?.click()} className="h-10 w-auto text-xs flex items-center gap-2">
+                        <Button onClick={() => document.getElementById('image-upload')?.click()} className="w-auto text-xs flex items-center gap-2">
                             <IconUpload className="w-4 h-4" />
                             Upload Image
                         </Button>
@@ -1126,9 +1126,9 @@ export default function EditorPage() {
                 ) : (
                     <section className="flex flex-col w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border border-[var(--border)] overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
                         {loading && (
-                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
-                                <span className="text-lg font-semibold text-white animate-pulse">Processing image...</span>
-                                <span className="text-xs text-white/80 mt-2">This may take up to 15 seconds</span>
+                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[var(--background)]/60 backdrop-blur-sm animate-fade-in">
+                                <span className="text-lg font-semibold text-[var(--foreground)] animate-pulse">Processing image...</span>
+                                <span className="text-xs text-[var(--foreground)]/80 mt-2">This may take up to 15 seconds</span>
                             </div>
                         )}
                         <div className="w-full h-full overflow-auto flex items-center justify-center">
@@ -1138,7 +1138,7 @@ export default function EditorPage() {
                             />
                         </div>
                         {/* Floating Download Actions */}
-                        <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-8 z-40 bg-white dark:bg-[var(--secondary)]/90 rounded-[var(--radius-sm)] shadow-lg border border-[var(--border)] p-1 gap-1.5 items-center">
+                        <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-8 z-40 bg-[var(--secondary)]/90 rounded-[var(--radius-sm)] shadow-lg border border-[var(--border)] p-1 gap-1.5 items-center">
                             <Button onClick={downloadImage} className="h-9 text-xs flex items-center gap-2">
                                 <IconDownload className="w-4 h-4" />
                                 Download

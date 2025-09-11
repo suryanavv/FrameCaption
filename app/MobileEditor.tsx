@@ -408,9 +408,9 @@ export default function MobileEditor(props: MobileEditorProps) {
                 ) : (
                     <section className="flex flex-col flex-1 w-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-[var(--border)] overflow-hidden relative min-h-0">
                         {loading && (
-                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm animate-fade-in">
-                                <span className="text-lg font-semibold text-white animate-pulse">Processing image...</span>
-                                <span className="text-xs text-white/80 mt-2">This may take up to 15 seconds</span>
+                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[var(--background)]/60 backdrop-blur-sm animate-fade-in">
+                                <span className="text-lg font-semibold text-[var(--foreground)] animate-pulse">Processing image...</span>
+                                <span className="text-xs text-[var(--foreground)]/80 mt-2">This may take up to 15 seconds</span>
                             </div>
                         )}
                         <div className="flex-1 w-full overflow-hidden flex items-center justify-center min-h-0">
