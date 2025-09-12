@@ -76,8 +76,8 @@ export const AnimatedThemeToggler = ({ className }: AnimatedThemeTogglerProps) =
     document.documentElement.animate(
       {
         clipPath: [
-          `circle(0px at ${x}px ${y}px)`,
-          `circle(${maxRad}px at ${x}px ${y}px)`,
+          `polygon(100% 0, 100% 0, 100% 100%, 100% 100%)`,
+          `polygon(100% 0, 0 0, 0 100%, 100% 100%)`,
         ],
       },
       {

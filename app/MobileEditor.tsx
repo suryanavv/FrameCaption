@@ -16,7 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { inter, poppins, montserrat, playfairDisplay, merriweather, lora, dancingScript, caveat, firaMono, oswald, raleway, ptSerif, nunito, rubik, pacifico } from "@/components/fonts";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
-import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 // Curated 15 fonts with excellent weight support for different styles
 const googleFonts = [
@@ -204,9 +204,22 @@ export default function MobileEditor(props: MobileEditorProps) {
         // Draw canvas for export (without border indicator)
         drawCanvasForExport();
 
+        // Determine appropriate quality based on canvas size to keep file size reasonable
+        let quality = 0.8; // Slightly lower default for mobile (saves bandwidth)
+        const maxPixels = canvas.width * canvas.height;
+
+        // Adjust quality based on image size to keep file size reasonable
+        if (maxPixels > 4000000) { // 4K equivalent
+            quality = 0.6; // Lower quality for very large images on mobile
+        } else if (maxPixels > 2000000) { // 2K equivalent
+            quality = 0.7; // Lower quality for large images on mobile
+        } else if (maxPixels < 500000) { // Small images
+            quality = 0.9; // Higher quality for small images
+        }
+
         const link = document.createElement('a');
         link.download = generateUniqueFilename();
-        link.href = canvas.toDataURL('image/png');
+        link.href = canvas.toDataURL('image/png', quality);
         link.click();
 
         // Redraw canvas with border indicator for editing
@@ -399,7 +412,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                         <IconUpload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
                         <p className="text-[var(--muted-foreground)] mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
-                        <Button onClick={() => document.getElementById('image-upload')?.click()} className="h-10 w-auto text-xs flex items-center gap-2">
+                        <Button onClick={() => document.getElementById('image-upload')?.click()} className="h-10 w-auto text-xs flex items-center gap-2 cursor-pointer">
                             <IconUpload className="w-4 h-4" />
                             Upload Image
                         </Button>
@@ -419,16 +432,22 @@ export default function MobileEditor(props: MobileEditorProps) {
                                 className="max-w-full max-h-full object-contain"
                             />
                         </div>
-                        {/* Mobile/Tablet Download Actions + Move Button */}
-                        <div className="flex-shrink-0 flex w-full justify-center p-2 gap-2 relative">
-                            <Button onClick={downloadImageForMobile} className="h-9 text-xs flex-1 flex items-center gap-2">
-                                <IconDownload className="w-4 h-4" />
-                                Download
-                            </Button>
-                            <Button variant="outline" onClick={tryAnotherImage} className="h-9 text-xs flex-1 flex items-center gap-2">
-                                <IconPhoto className="w-4 h-4" />
-                                Try Another
-                            </Button>
+                        {/* Floating Download Dock - Mobile/Tablet (smaller) */}
+                        <div className="fixed bottom-0.5 left-1/2 -translate-x-1/2 z-40 flex lg:hidden bg-[var(--secondary)]/95 backdrop-blur-md rounded-[var(--radius-lg)] shadow-xl border border-[var(--border)] p-1 gap-1 items-center">
+                                <Button
+                                    onClick={downloadImageForMobile}
+                                    className="h-8 flex-1 flex items-center justify-center gap-1 text-[0.7rem] cursor-pointer border border-[var(--border)] bg-primary hover:bg-primary/80 text-primary-foreground rounded-[var(--radius-sm)] transition-colors"
+                                    >
+                                    <IconDownload className="w-3.5 h-3.5" />
+                                    Download
+                                </Button>
+                                <Button
+                                    onClick={tryAnotherImage}
+                                    className="h-8 flex-1 flex items-center justify-center gap-1 text-[0.7rem] cursor-pointer border border-[var(--border)] bg-background text-foreground hover:bg-background/80 rounded-[var(--radius-sm)] transition-colors"
+                                >
+                                    <IconRefresh className="w-3.5 h-3.5" />
+                                    Try Another
+                                </Button>
                         </div>
                     </section>
                 )}
@@ -444,14 +463,14 @@ export default function MobileEditor(props: MobileEditorProps) {
                     <TabsList className="flex-shrink-0 w-full flex items-center gap-1 h-10 rounded-[var(--radius-sm)]">
                         <TabsTrigger
                             value="text"
-                            className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)]"
+                            className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
                         >
                             <IconTypography className="w-2.5 h-2.5" />
                             <span className="text-[0.625rem]">Text</span>
                         </TabsTrigger>
                         <TabsTrigger
                             value="image"
-                            className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)]"
+                            className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
                         >
                             <IconPhoto className="w-2.5 h-2.5" />
                             <span className="text-[0.625rem]">Image</span>
@@ -466,7 +485,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                         <div className="flex flex-col gap-2">
                                             <div className="flex items-center justify-between">
                                                 <Label className="text-xs text-[var(--muted-foreground)]">Text Layers</Label>
-                                                <Button variant="outline" size="sm" onClick={addText} className="w-full text-xs h-7 px-2">
+                                                <Button variant="outline" size="sm" onClick={addText} className="w-full text-xs h-7 px-2 cursor-pointer">
                                                     Add
                                                 </Button>
                                             </div>
@@ -478,13 +497,13 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                             <span className="truncate text-xs" style={{ fontFamily: text.font }}>{text.content}</span>
                                                             <div className="flex items-center gap-1">
                                                                 {/* Mobile: Up/Down controls (fixed for reversed order) */}
-                                                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={e => { e.stopPropagation(); moveTextLayerDown(originalIndex); }} disabled={originalIndex === texts.length - 1} aria-label="Move up">
+                                                                <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer" onClick={e => { e.stopPropagation(); moveTextLayerDown(originalIndex); }} disabled={originalIndex === texts.length - 1} aria-label="Move up">
                                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"/></svg>
                                                                 </Button>
-                                                                <Button variant="ghost" size="icon" className="h-5 w-5" onClick={e => { e.stopPropagation(); moveTextLayerUp(originalIndex); }} disabled={originalIndex === 0} aria-label="Move down">
+                                                                <Button variant="ghost" size="icon" className="h-5 w-5 cursor-pointer" onClick={e => { e.stopPropagation(); moveTextLayerUp(originalIndex); }} disabled={originalIndex === 0} aria-label="Move down">
                                                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
                                                                 </Button>
-                                                                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteText(originalIndex) }} className="h-5 w-5">
+                                                                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteText(originalIndex) }} className="h-5 w-5 cursor-pointer">
                                                                     <IconTrash className="w-3 h-3" />
                                                                 </Button>
                                                             </div>
@@ -559,7 +578,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <span
-                                                            className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                            className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                             style={{ backgroundColor: activeText.color }}
                                                         />
                                                     </PopoverTrigger>
@@ -687,10 +706,10 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                             <Popover>
                                                                 <PopoverTrigger asChild>
                                                                     <span
-                                                                        className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                                        className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                                         style={{ backgroundColor: activeText.textShadowColor ?? '#000000' }}
                                                                     />
-                                                                </PopoverTrigger>
+                                                            </PopoverTrigger>
                                                                 <PopoverContent className="w-auto p-2" align="start">
                                                                     <HexColorPicker
                                                                         color={activeText.textShadowColor ?? '#000000'}
@@ -770,11 +789,11 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                     <Label className="text-xs text-[var(--muted-foreground)]">Background Color</Label>
                                                     <div className="flex items-center gap-2 w-full relative">
                                                         <Popover>
-                                                            <PopoverTrigger asChild>
-                                                                <span
-                                                                    className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
-                                                                    style={{ backgroundColor: activeText.textBackgroundColor ?? '#ffffff' }}
-                                                                />
+                                                                <PopoverTrigger asChild>
+                                                                    <span
+                                                                        className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                                                                        style={{ backgroundColor: activeText.textBackgroundColor ?? '#ffffff' }}
+                                                                    />
                                                             </PopoverTrigger>
                                                             <PopoverContent className="w-auto p-2" align="start">
                                                                 <HexColorPicker
@@ -852,10 +871,10 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                             <Popover>
                                                                 <PopoverTrigger asChild>
                                                                     <span
-                                                                        className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                                        className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                                         style={{ backgroundColor: customBgColor }}
                                                                     />
-                                                                </PopoverTrigger>
+                                                            </PopoverTrigger>
                                                                 <PopoverContent className="w-auto p-2" align="start">
                                                                     <HexColorPicker
                                                                         color={customBgColor}
@@ -953,13 +972,13 @@ export default function MobileEditor(props: MobileEditorProps) {
                         {/* Fixed Reset Button */}
                         <div className="flex-shrink-0 p-2 border-t border-[var(--border)] bg-[var(--secondary)]/30">
                                 {activeTab === 'text' && (
-                                    <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-9 text-xs bg-background hover:bg-accent">
+                                    <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-9 text-xs bg-background hover:bg-accent cursor-pointer">
                                         <IconRefresh className="w-3 h-3 mr-1" />
                                         Reset Text
                                     </Button>
                                 )}
                                 {activeTab === 'image' && (
-                                    <Button variant="outline" size="sm" onClick={resetImageEdits} className="w-full h-9 text-xs bg-background hover:bg-accent">
+                                    <Button variant="outline" size="sm" onClick={resetImageEdits} className="w-full h-9 text-xs bg-background hover:bg-accent cursor-pointer">
                                         <IconRefresh className="w-3 h-3 mr-1" />
                                         Reset Image
                                     </Button>

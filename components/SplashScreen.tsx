@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { Ripple } from '@/components/magicui/ripple';
+// import { Ripple } from '@/components/ui/ripple';
 
 interface SplashScreenProps {
   children: React.ReactNode;
@@ -54,12 +54,12 @@ export default function SplashScreen({ children }: SplashScreenProps) {
           isLoading ? "opacity-100" : "opacity-0"
         )}
       >
-        <Ripple 
+        {/* <Ripple 
           mainCircleSize={300}
           mainCircleOpacity={0.25}
           numCircles={12}
           className="absolute inset-0"
-        />
+        /> */}
 
         <div className="flex flex-col items-center space-y-4">
           {/* Logo with animation */}
@@ -68,8 +68,8 @@ export default function SplashScreen({ children }: SplashScreenProps) {
               <Image
                 src="/icon.svg"
                 alt="FrameCaption"
-                width={32}
-                height={32}
+                width={64}
+                height={64}
                 className=""
               />
             </div>

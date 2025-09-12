@@ -22,7 +22,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { HexColorPicker } from "react-colorful";
 import dynamic from 'next/dynamic';
 import { getBackgroundRemovalStats, setBackgroundRemovalConfig } from '@/lib/backgroundRemoval';
-import { AnimatedThemeToggler } from "@/components/magicui/animated-theme-toggler";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 const MobileEditor = dynamic(() => import('./MobileEditor'), { ssr: false });
 
@@ -388,9 +388,22 @@ export default function EditorPage() {
         // Draw canvas for export (without border indicator)
         drawCanvasForExport();
 
+        // Determine appropriate quality based on canvas size to keep file size reasonable
+        let quality = 0.85; // Default good quality
+        const maxPixels = canvas.width * canvas.height;
+
+        // Adjust quality based on image size to keep file size reasonable
+        if (maxPixels > 4000000) { // 4K equivalent
+            quality = 0.7; // Lower quality for very large images
+        } else if (maxPixels > 2000000) { // 2K equivalent
+            quality = 0.8; // Good quality for large images
+        } else if (maxPixels < 500000) { // Small images
+            quality = 0.95; // Higher quality for small images
+        }
+
         const link = document.createElement('a');
         link.download = generateUniqueFilename();
-        link.href = canvas.toDataURL('image/png');
+        link.href = canvas.toDataURL('image/png', quality);
         link.click();
 
         // Redraw canvas with border indicator for editing
@@ -422,6 +435,10 @@ export default function EditorPage() {
         setTexts([{ ...defaultTextSettings, position: getCenterPosition() }]);
         setActiveTextIndex(0);
         resetImageEdits();
+        // Trigger file upload dialog directly
+        setTimeout(() => {
+            document.getElementById('image-upload')?.click();
+        }, 100);
     };
 
     const activeText = texts[activeTextIndex];
@@ -551,12 +568,12 @@ export default function EditorPage() {
     return (
         <div className="flex flex-col lg:flex-row p-1.5 w-full h-screen max-h-screen overflow-hidden">
             {/* Mobile Top Header */}
-            <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-[var(--secondary)]/80 backdrop-blur-md rounded-[var(--radius-sm)] border border-[var(--border)] w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto mb-2 lg:hidden">
+            {/* <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-[var(--secondary)]/80 backdrop-blur-md rounded-[var(--radius-sm)] border border-[var(--border)] w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto mb-2 lg:hidden">
                 <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                     <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
                     FrameCaption
                 </h1>
-            </header>
+            </header> */}
             {/* Responsive Layout with Image */}
             <div className="flex flex-col lg:flex-row gap-1.5 w-full h-full">
                 {/* Left Sidebar - Controls */}
@@ -574,14 +591,14 @@ export default function EditorPage() {
                         <TabsList className="w-full flex items-center gap-1 h-8 lg:h-10 rounded-[var(--radius-sm)]">
                             <TabsTrigger
                                 value={"text"}
-                                className="flex-1 text-xs border border-[var(--border)] p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 cursor-pointer rounded-[var(--radius-sm)]"
+                                className="flex-1 text-xs border border-[var(--border)] p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
                             >
                                 <IconTypography className="w-2.5 h-2.5 mb-0.5" />
                                 <span className="text-[0.625rem]">Text</span>
                             </TabsTrigger>
                             <TabsTrigger
                                 value={"image"}
-                                className="flex-1 text-xs border border-[var(--border)] p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 cursor-pointer rounded-[var(--radius-sm)]"
+                                className="flex-1 text-xs border border-[var(--border)] p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
                             >
                                 <IconPhoto className="w-2.5 h-2.5 mb-0.5" />
                                 <span className="text-[0.625rem]">Image</span>
@@ -598,7 +615,7 @@ export default function EditorPage() {
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
                                             <Label className="text-xs text-[var(--muted-foreground)]">Text Layers</Label>
-                                            <Button variant="outline" size="sm" onClick={addText} className="w-full text-xs h-7 px-2">
+                                            <Button variant="outline" size="sm" onClick={addText} className="w-full text-xs h-7 px-2 cursor-pointer">
                                                 Add
                                             </Button>
                                         </div>
@@ -614,7 +631,7 @@ export default function EditorPage() {
                                                         onDragLeave={handleDragLeave}
                                                         onDrop={(e) => handleDrop(e, originalIndex)}
                                                         onDragEnd={handleDragEnd}
-                                                        className={`flex items-center justify-between p-2 rounded-[var(--radius-sm)] cursor-pointer transition-all ${
+                                                        className={`flex items-center justify-between p-2 rounded-[var(--radius-sm)] transition-all cursor-pointer ${
                                                             activeTextIndex === originalIndex ? 'bg-[var(--primary)]/10' : 'hover:bg-[var(--primary)]/5'
                                                         } ${
                                                             draggedIndex === originalIndex ? 'opacity-50' : ''
@@ -629,7 +646,7 @@ export default function EditorPage() {
                                                             <span className="truncate text-xs" style={{ fontFamily: text.font }}>{text.content}</span>
                                                         </div>
                                                         <div className="flex items-center gap-1">
-                                                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteText(originalIndex) }} className="h-5 w-5">
+                                                            <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); deleteText(originalIndex) }} className="h-5 w-5 cursor-pointer">
                                                                 <IconTrash className="w-3 h-3" />
                                                             </Button>
                                                         </div>
@@ -671,7 +688,7 @@ export default function EditorPage() {
                                             <SelectTrigger className="w-full h-9 text-xs">
                                                 <SelectValue placeholder="Select font" />
                                             </SelectTrigger>
-                                            <SelectContent className="max-h-[300px] overflow-y-auto">
+                                            <SelectContent className="max-h-[275px] overflow-y-auto" side="top">
                                                 {googleFonts.map(f => (
                                                     <SelectItem key={f.value} value={f.value} className={f.className}>
                                                         <span style={{ fontFamily: f.value }} className="text-xs">{f.label}</span>
@@ -703,7 +720,7 @@ export default function EditorPage() {
                                             <Popover>
                                                 <PopoverTrigger asChild>
                                                     <span
-                                                        className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                        className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                         style={{ backgroundColor: activeText.color }}
                                                     />
                                                 </PopoverTrigger>
@@ -830,7 +847,7 @@ export default function EditorPage() {
                                                             <Popover>
                                                                 <PopoverTrigger asChild>
                                                                     <span
-                                                                        className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                                        className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                                         style={{ backgroundColor: activeText.textShadowColor ?? '#000000' }}
                                                                     />
                                                             </PopoverTrigger>
@@ -915,7 +932,7 @@ export default function EditorPage() {
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <span
-                                                                    className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                                    className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                                     style={{ backgroundColor: activeText.textBackgroundColor ?? '#ffffff' }}
                                                                 />
                                                             </PopoverTrigger>
@@ -994,7 +1011,7 @@ export default function EditorPage() {
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <span
-                                                                    className="w-6 h-6 rounded-full cursor-pointer aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2"
+                                                                    className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                                     style={{ backgroundColor: customBgColor }}
                                                                 />
                                                             </PopoverTrigger>
@@ -1094,13 +1111,13 @@ export default function EditorPage() {
                         {/* Sticky Reset Button */}
                         <div className="flex-shrink-0 p-3 pt-2 border-t border-[var(--border)] bg-[var(--secondary)]/30">
                             {activeTab === "text" && (
-                                <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-9 text-xs bg-background hover:bg-accent">
+                                <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-9 text-xs bg-background hover:bg-accent cursor-pointer">
                                     <IconRefresh className="w-3 h-3 mr-1" />
                                     Reset Text
                                 </Button>
                             )}
                             {activeTab === "image" && (
-                                <Button variant="outline" size="sm" onClick={resetImageEdits} className="w-full h-9 text-xs bg-background hover:bg-accent">
+                                <Button variant="outline" size="sm" onClick={resetImageEdits} className="w-full h-9 text-xs bg-background hover:bg-accent cursor-pointer">
                                     <IconRefresh className="w-3 h-3 mr-1" />
                                     Reset Image
                                 </Button>
@@ -1117,7 +1134,7 @@ export default function EditorPage() {
                         <IconUpload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
                         <p className="text-[var(--muted-foreground)] mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
-                        <Button onClick={() => document.getElementById('image-upload')?.click()} className="w-auto text-xs flex items-center gap-2">
+                        <Button onClick={() => document.getElementById('image-upload')?.click()} className="w-auto text-xs flex items-center gap-2 cursor-pointer">
                             <IconUpload className="w-4 h-4" />
                             Upload Image
                         </Button>
@@ -1137,14 +1154,21 @@ export default function EditorPage() {
                                 className="max-w-full max-h-full object-contain"
                             />
                         </div>
-                        {/* Floating Download Actions */}
-                        <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-8 z-40 bg-[var(--secondary)]/90 rounded-[var(--radius-sm)] shadow-lg border border-[var(--border)] p-1 gap-1.5 items-center">
-                            <Button onClick={downloadImage} className="h-9 text-xs flex items-center gap-2">
+                        {/* Floating Download Dock */}
+                        <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-1 z-40 gap-2 items-center  bg-[var(--secondary)]/95 backdrop-blur-md rounded-[var(--radius-lg)] shadow-xl border border-[var(--border)] p-1">
+                            {/* Action Buttons */}
+                            <Button
+                                onClick={downloadImage}
+                                className="h-9 text-xs flex items-center gap-2 cursor-pointer border border-border bg-primary hover:bg-primary/80 text-primary-foreground rounded-[var(--radius-sm)] transition-colors"
+                            >
                                 <IconDownload className="w-4 h-4" />
                                 Download
                             </Button>
-                            <Button variant="outline" onClick={tryAnotherImage} className="h-9 flex items-center gap-2 text-xs">
-                                <IconPhoto className="w-4 h-4" />
+                            <Button
+                                onClick={tryAnotherImage}
+                                className="h-9 flex items-center gap-2 text-xs cursor-pointer border-[var(--border)] bg-background text-foreground hover:bg-background/80 rounded-[var(--radius-sm)] transition-colors"
+                                >
+                                <IconRefresh className="w-4 h-4" />
                                 Try Another
                             </Button>
                         </div>
