@@ -88,7 +88,6 @@ const defaultTextSettings: TextSettings = {
     content: 'Your Text Here',
     position: getCenterPosition(),
     opacity: 1,
-    letterSpacing: 0,
     lineHeight: 1.2,
     alignment: 'start',
     sliderX: 0, // Add sliderX and sliderY to defaultTextSettings
@@ -312,7 +311,7 @@ export default function EditorPage() {
                 y: t.position.y
             }
         }));
-            addTextToCanvas(ctx, centeredOnTopTexts, undefined, false, texts, activeTextIndex); // Hide border indicator for export
+        addTextToCanvas(ctx, centeredOnTopTexts, undefined, false, texts, activeTextIndex); // Hide border indicator for export
     }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, bgBlur, useCustomBg, customBgColor, fgBrightness, fgContrast, fgBlur, activeTextIndex]);
 
     useEffect(() => {
@@ -498,7 +497,7 @@ export default function EditorPage() {
         const draggedText = newTexts[draggedIndex];
         newTexts.splice(draggedIndex, 1);
         newTexts.splice(dropIndex, 0, draggedText);
-        
+
         setTexts(newTexts);
         setActiveTextIndex(dropIndex);
         setDraggedIndex(null);
@@ -631,13 +630,10 @@ export default function EditorPage() {
                                                         onDragLeave={handleDragLeave}
                                                         onDrop={(e) => handleDrop(e, originalIndex)}
                                                         onDragEnd={handleDragEnd}
-                                                        className={`flex items-center justify-between p-2 rounded-[var(--radius-sm)] transition-all cursor-pointer ${
-                                                            activeTextIndex === originalIndex ? 'bg-[var(--primary)]/10' : 'hover:bg-[var(--primary)]/5'
-                                                        } ${
-                                                            draggedIndex === originalIndex ? 'opacity-50' : ''
-                                                        } ${
-                                                            dragOverIndex === originalIndex ? 'border-2 border-[var(--primary)]/50 bg-[var(--primary)]/5' : ''
-                                                        }`}
+                                                        className={`flex items-center justify-between p-2 rounded-[var(--radius-sm)] transition-all cursor-pointer ${activeTextIndex === originalIndex ? 'bg-[var(--primary)]/10' : 'hover:bg-[var(--primary)]/5'
+                                                            } ${draggedIndex === originalIndex ? 'opacity-50' : ''
+                                                            } ${dragOverIndex === originalIndex ? 'border-2 border-[var(--primary)]/50 bg-[var(--primary)]/5' : ''
+                                                            }`}
                                                         onClick={() => setActiveTextIndex(originalIndex)}
                                                     >
                                                         <div className="flex items-center gap-1">
@@ -658,21 +654,21 @@ export default function EditorPage() {
 
                                     <Separator />
 
-                                                                            {/* Layer Position Switch */}
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <IconArrowNarrowUp className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                                <Label className="text-xs text-[var(--muted-foreground)]">On Top</Label>
-                                            </div>
+                                    {/* Layer Position Switch */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <IconArrowNarrowUp className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                            <Label className="text-xs text-[var(--muted-foreground)]">On Top</Label>
+                                        </div>
                                         <Switch
                                             checked={activeText.onTop ?? false}
                                             onCheckedChange={(checked) => handleTextChange('onTop', checked)}
                                         />
                                     </div>
 
-                                                                            {/* Text Content */}
-                                        <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Content</Label>
+                                    {/* Text Content */}
+                                    <div className="flex flex-col gap-2">
+                                        <Label className="text-xs text-[var(--muted-foreground)]">Content</Label>
                                         <Textarea
                                             value={activeText.content}
                                             onChange={(e) => handleTextChange('content', e.target.value)}
@@ -681,9 +677,9 @@ export default function EditorPage() {
                                         />
                                     </div>
 
-                                                                            {/* Font Selection */}
-                                        <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Font</Label>
+                                    {/* Font Selection */}
+                                    <div className="flex flex-col gap-2">
+                                        <Label className="text-xs text-[var(--muted-foreground)]">Font</Label>
                                         <Select value={activeText.font} onValueChange={(value) => handleTextChange('font', value)}>
                                             <SelectTrigger className="w-full h-9 text-xs">
                                                 <SelectValue placeholder="Select font" />
@@ -699,12 +695,12 @@ export default function EditorPage() {
                                     </div>
 
 
-                                                                            {/* Font Style Switch */}
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <IconItalic className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Italic</Label>
-                                            </div>
+                                    {/* Font Style Switch */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <IconItalic className="w-4 h-4 text-[var(--muted-foreground)]" />
+                                            <Label className="text-xs text-[var(--muted-foreground)]">Italic</Label>
+                                        </div>
                                         <Switch
                                             checked={activeText.fontStyle === 'italic'}
                                             onCheckedChange={(checked) => handleTextChange('fontStyle', checked ? 'italic' : 'normal')}
@@ -776,16 +772,6 @@ export default function EditorPage() {
                                             />
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Letter Spacing: {activeText.letterSpacing ?? 0}px</Label>
-                                            <Slider
-                                                value={[activeText.letterSpacing ?? 0]}
-                                                onValueChange={([val]) => handleTextChange('letterSpacing', val)}
-                                                max={50}
-                                                min={-50}
-                                                step={1}
-                                            />
-                                        </div>
-                                        <div className="flex flex-col gap-2">
                                             <Label className="text-xs text-[var(--muted-foreground)]">Line Height: {activeText.lineHeight ?? 1.2}</Label>
                                             <Slider
                                                 value={[activeText.lineHeight ?? 1.2]}
@@ -837,19 +823,19 @@ export default function EditorPage() {
                                                 onCheckedChange={(checked) => handleTextChange('textShadowEnabled', checked)}
                                             />
                                         </div>
-                                        
+
                                         {activeText.textShadowEnabled && (
                                             <>
                                                 {/* Shadow Color */}
-                                                                                                    <div className="flex flex-col gap-2">
-                                                        <Label className="text-xs text-[var(--muted-foreground)]">Shadow Color</Label>
-                                                        <div className="flex items-center gap-2 w-full relative">
-                                                            <Popover>
-                                                                <PopoverTrigger asChild>
-                                                                    <span
-                                                                        className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
-                                                                        style={{ backgroundColor: activeText.textShadowColor ?? '#000000' }}
-                                                                    />
+                                                <div className="flex flex-col gap-2">
+                                                    <Label className="text-xs text-[var(--muted-foreground)]">Shadow Color</Label>
+                                                    <div className="flex items-center gap-2 w-full relative">
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <span
+                                                                    className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                                                                    style={{ backgroundColor: activeText.textShadowColor ?? '#000000' }}
+                                                                />
                                                             </PopoverTrigger>
                                                             <PopoverContent className="w-auto p-2" align="start">
                                                                 <HexColorPicker
@@ -1145,7 +1131,6 @@ export default function EditorPage() {
                         {loading && (
                             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[var(--background)]/60 backdrop-blur-sm animate-fade-in">
                                 <span className="text-lg font-semibold text-[var(--foreground)] animate-pulse">Processing image...</span>
-                                <span className="text-xs text-[var(--foreground)]/80 mt-2">This may take up to 15 seconds</span>
                             </div>
                         )}
                         <div className="w-full h-full overflow-auto flex items-center justify-center">
@@ -1167,7 +1152,7 @@ export default function EditorPage() {
                             <Button
                                 onClick={tryAnotherImage}
                                 className="h-9 flex items-center gap-2 text-xs cursor-pointer border-[var(--border)] bg-background text-foreground hover:bg-background/80 rounded-[var(--radius-sm)] transition-colors"
-                                >
+                            >
                                 <IconRefresh className="w-4 h-4" />
                                 Try Another
                             </Button>
@@ -1203,28 +1188,28 @@ export default function EditorPage() {
                                 <input type="checkbox" checked={fastMode} onChange={(e) => setFastMode(e.target.checked)} />
                                 <span>Fast mode</span>
                             </label>
-                            <button onClick={() => setDevPerfOpen((v)=>!v)} className="px-2 py-0.5 rounded border hover:bg-[var(--secondary)]">{devPerfOpen ? 'Hide' : 'Show'}</button>
+                            <button onClick={() => setDevPerfOpen((v) => !v)} className="px-2 py-0.5 rounded border hover:bg-[var(--secondary)]">{devPerfOpen ? 'Hide' : 'Show'}</button>
                         </div>
                     </div>
                     {devPerfOpen && (
-                    <div className="space-y-1">
-                        <div className="flex justify-between"><span>Fast Mode</span><span>{fastMode ? 'ON' : 'OFF'}</span></div>
-                        <div className="flex justify-between"><span>Device</span><span>{isMobile ? 'Mobile' : 'Desktop'}</span></div>
-                        <div className="flex justify-between"><span>Module cached</span><span>{String(devPerfStats?.moduleCached)}</span></div>
-                        <div className="flex justify-between"><span>Module load</span><span>{Math.round(devPerfStats?.moduleLoadMs ?? 0)} ms</span></div>
-                        <div className="flex justify-between"><span>Cache hits</span><span>{devPerfStats?.cacheHits ?? 0}</span></div>
-                        <div className="flex justify-between"><span>ImageBitmap</span><span>{Math.round(devPerfStats?.lastImageBitmapMs ?? 0)} ms</span></div>
-                        <div className="flex justify-between"><span>Process (mask)</span><span>{Math.round(devPerfStats?.lastProcessMs ?? 0)} ms</span></div>
-                        <div className="flex justify-between"><span>Composite</span><span>{Math.round(devPerfStats?.lastCompositeMs ?? 0)} ms</span></div>
-                        <div className="flex justify-between"><span>Total</span><span>{Math.round(devPerfStats?.lastTotalMs ?? 0)} ms</span></div>
-                        {typeof (performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory !== 'undefined' && (
-                            <div className="pt-1 border-t mt-1">
-                                <div className="flex justify-between"><span>JS Heap Used</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.usedJSHeapSize ?? 0) / 1024 / 1024)} MB</span></div>
-                                <div className="flex justify-between"><span>JS Heap Total</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.totalJSHeapSize ?? 0) / 1024 / 1024)} MB</span></div>
-                                <div className="flex justify-between"><span>JS Heap Limit</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.jsHeapSizeLimit ?? 0) / 1024 / 1024)} MB</span></div>
-                            </div>
-                        )}
-                    </div>
+                        <div className="space-y-1">
+                            <div className="flex justify-between"><span>Fast Mode</span><span>{fastMode ? 'ON' : 'OFF'}</span></div>
+                            <div className="flex justify-between"><span>Device</span><span>{isMobile ? 'Mobile' : 'Desktop'}</span></div>
+                            <div className="flex justify-between"><span>Module cached</span><span>{String(devPerfStats?.moduleCached)}</span></div>
+                            <div className="flex justify-between"><span>Module load</span><span>{Math.round(devPerfStats?.moduleLoadMs ?? 0)} ms</span></div>
+                            <div className="flex justify-between"><span>Cache hits</span><span>{devPerfStats?.cacheHits ?? 0}</span></div>
+                            <div className="flex justify-between"><span>ImageBitmap</span><span>{Math.round(devPerfStats?.lastImageBitmapMs ?? 0)} ms</span></div>
+                            <div className="flex justify-between"><span>Process (mask)</span><span>{Math.round(devPerfStats?.lastProcessMs ?? 0)} ms</span></div>
+                            <div className="flex justify-between"><span>Composite</span><span>{Math.round(devPerfStats?.lastCompositeMs ?? 0)} ms</span></div>
+                            <div className="flex justify-between"><span>Total</span><span>{Math.round(devPerfStats?.lastTotalMs ?? 0)} ms</span></div>
+                            {typeof (performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory !== 'undefined' && (
+                                <div className="pt-1 border-t mt-1">
+                                    <div className="flex justify-between"><span>JS Heap Used</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.usedJSHeapSize ?? 0) / 1024 / 1024)} MB</span></div>
+                                    <div className="flex justify-between"><span>JS Heap Total</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.totalJSHeapSize ?? 0) / 1024 / 1024)} MB</span></div>
+                                    <div className="flex justify-between"><span>JS Heap Limit</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.jsHeapSizeLimit ?? 0) / 1024 / 1024)} MB</span></div>
+                                </div>
+                            )}
+                        </div>
                     )}
                 </div>
             )}

@@ -15,7 +15,6 @@ export interface TextSettings {
     strokeColor?: string;
     strokeWidth?: number;
     opacity?: number;
-    letterSpacing?: number;
     lineHeight?: number;
     sliderX?: number;
     sliderY?: number;
@@ -34,7 +33,16 @@ export interface TextSettings {
     textBackgroundPadding?: number;
   }
   
-  export function addTextToCanvas(
+  // Simple cache for text measurements to improve performance
+const textMeasurementCache = new Map<string, TextMetrics>();
+const getTextMeasurementKey = (text: string, font: string) => `${font}_${text}`;
+
+// Function to clear text measurement cache (useful for memory management)
+export function clearTextMeasurementCache() {
+  textMeasurementCache.clear();
+}
+
+export function addTextToCanvas(
     ctx: CanvasRenderingContext2D,
     textSettings: TextSettings | TextSettings[],
     activeTextIndex?: number,
@@ -51,7 +59,6 @@ export interface TextSettings {
         shadowColor, shadowBlur, shadowOffsetX, shadowOffsetY,
         strokeColor, strokeWidth,
         opacity = 1,
-        letterSpacing = 0,
         lineHeight = 1.2,
         textShadowEnabled = false,
         textShadowColor = '#000000',
@@ -67,8 +74,11 @@ export interface TextSettings {
       // Convert percentage to actual pixel size based on canvas width
       const actualFontSize = (fontSize / 100) * ctx.canvas.width;
 
+      // Create font string for caching
+      const fontString = `${fontStyle} ${fontWeight} ${actualFontSize}px ${font}`;
+
       ctx.save();
-      ctx.font = `${fontStyle} ${fontWeight} ${actualFontSize}px ${font}`;
+      ctx.font = fontString;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.globalAlpha = opacity;
@@ -84,17 +94,28 @@ export interface TextSettings {
       let maxWidth = 0;
       const totalHeight = lines.length * actualFontSize * lineHeight;
 
+      // Cached text measurement function
+      const measureTextCached = (text: string): TextMetrics => {
+        const cacheKey = getTextMeasurementKey(text, fontString);
+        let metrics = textMeasurementCache.get(cacheKey);
+        if (!metrics) {
+          metrics = ctx.measureText(text);
+          textMeasurementCache.set(cacheKey, metrics);
+          // Limit cache size to prevent memory leaks
+          if (textMeasurementCache.size > 1000) {
+            const firstKey = textMeasurementCache.keys().next().value;
+            if (firstKey) {
+              textMeasurementCache.delete(firstKey);
+            }
+          }
+        }
+        return metrics;
+      };
+
       // Calculate text dimensions for background
       let textMaxWidth = 0;
       for (let j = 0; j < lines.length; j++) {
-        let lineWidth = 0;
-        if (letterSpacing) {
-          for (const char of lines[j]) {
-            lineWidth += ctx.measureText(char).width + letterSpacing;
-          }
-        } else {
-          lineWidth = ctx.measureText(lines[j]).width;
-        }
+        const lineWidth = measureTextCached(lines[j]).width;
         if (lineWidth > textMaxWidth) textMaxWidth = lineWidth;
       }
 
@@ -112,77 +133,36 @@ export interface TextSettings {
       }
       // Calculate bounding box for indicator
       for (let j = 0; j < lines.length; j++) {
-        let lineWidth = 0;
-        if (letterSpacing) {
-          for (const char of lines[j]) {
-            lineWidth += ctx.measureText(char).width + letterSpacing;
-          }
-        } else {
-          lineWidth = ctx.measureText(lines[j]).width;
-        }
+        const lineWidth = measureTextCached(lines[j]).width;
         if (lineWidth > maxWidth) maxWidth = lineWidth;
       }
       // Draw text
       for (let j = 0; j < lines.length; j++) {
         const y = (j * actualFontSize * lineHeight) - (totalHeight / 2) + (actualFontSize * lineHeight) / 2;
-        // Calculate line width (including letter spacing)
-        let lineWidth = 0;
-        if (letterSpacing) {
-          for (const char of lines[j]) {
-            lineWidth += ctx.measureText(char).width + letterSpacing;
-          }
-        } else {
-          lineWidth = ctx.measureText(lines[j]).width;
-        }
+        // Calculate line width
+        const lineWidth = measureTextCached(lines[j]).width;
         // Center the line horizontally
-        let currentX = letterSpacing ? -lineWidth / 2 : 0;
-        if (letterSpacing) {
-          for (const char of lines[j]) {
-            // Draw text shadow if enabled
-            if (textShadowEnabled) {
-              ctx.save();
-              ctx.shadowColor = textShadowColor;
-              ctx.shadowBlur = textShadowBlur;
-              ctx.shadowOffsetX = textShadowOffsetX;
-              ctx.shadowOffsetY = textShadowOffsetY;
-              ctx.fillStyle = color;
-              ctx.fillText(char, currentX, y);
-              ctx.restore();
-            }
-            
-            // Draw main text
-            ctx.fillStyle = color;
-            ctx.fillText(char, currentX, y);
-            
-            if (strokeColor && strokeWidth) {
-              ctx.lineWidth = strokeWidth;
-              ctx.strokeStyle = strokeColor;
-              ctx.strokeText(char, currentX, y);
-            }
-            currentX += ctx.measureText(char).width + letterSpacing;
-          }
-        } else {
-          // Draw text shadow if enabled
-          if (textShadowEnabled) {
-            ctx.save();
-            ctx.shadowColor = textShadowColor;
-            ctx.shadowBlur = textShadowBlur;
-            ctx.shadowOffsetX = textShadowOffsetX;
-            ctx.shadowOffsetY = textShadowOffsetY;
-            ctx.fillStyle = color;
-            ctx.fillText(lines[j], 0, y);
-            ctx.restore();
-          }
-          
-          // Draw main text
+        let currentX = 0;
+        // Draw text shadow if enabled
+        if (textShadowEnabled) {
+          ctx.save();
+          ctx.shadowColor = textShadowColor;
+          ctx.shadowBlur = textShadowBlur;
+          ctx.shadowOffsetX = textShadowOffsetX;
+          ctx.shadowOffsetY = textShadowOffsetY;
           ctx.fillStyle = color;
           ctx.fillText(lines[j], 0, y);
-          
-          if (strokeColor && strokeWidth) {
-            ctx.lineWidth = strokeWidth;
-            ctx.strokeStyle = strokeColor;
-            ctx.strokeText(lines[j], 0, y);
-          }
+          ctx.restore();
+        }
+
+        // Draw main text
+        ctx.fillStyle = color;
+        ctx.fillText(lines[j], 0, y);
+
+        if (strokeColor && strokeWidth) {
+          ctx.lineWidth = strokeWidth;
+          ctx.strokeStyle = strokeColor;
+          ctx.strokeText(lines[j], 0, y);
         }
       }
       // Draw indicator if this is the active text and showBorderIndicator is true
