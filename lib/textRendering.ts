@@ -142,7 +142,7 @@ export function addTextToCanvas(
         // Calculate line width
         const lineWidth = measureTextCached(lines[j]).width;
         // Center the line horizontally
-        let currentX = 0;
+        const currentX = 0;
         // Draw text shadow if enabled
         if (textShadowEnabled) {
           ctx.save();
