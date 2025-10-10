@@ -8,7 +8,7 @@ import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { IconDownload, IconUpload, IconRefresh, IconTrash, IconPhoto, IconTypography, IconItalic, IconLayersIntersect, IconBackground, IconArrowNarrowUp } from '@tabler/icons-react';
-import { addTextToCanvas, TextSettings } from '@/lib/textRendering';
+import { addTextToCanvas, TextSettings, clearTextMeasurementCache } from '@/lib/textRendering';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster } from "@/components/ui/sonner";
 import { Separator } from "@/components/ui/separator";
@@ -110,17 +110,8 @@ interface MobileEditorProps {
     activeText: TextSettings;
     loading: boolean;
     setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-    devPerfStats: {
-        moduleCached: boolean;
-        moduleLoadMs?: number;
-        cacheHits: number;
-        lastImageBitmapMs?: number;
-        lastProcessMs?: number;
-        lastCompositeMs?: number;
-        lastTotalMs?: number;
-    } | null;
-    devPerfOpen: boolean;
-    setDevPerfOpen: React.Dispatch<React.SetStateAction<boolean>>;
+    processingStep: string;
+    setProcessingStep: React.Dispatch<React.SetStateAction<string>>;
 }
 
 
@@ -133,7 +124,7 @@ export default function MobileEditor(props: MobileEditorProps) {
         bgContrast, setBgContrast, bgBlur, setBgBlur, useCustomBg, setUseCustomBg, customBgColor, setCustomBgColor, fgBrightness, setFgBrightness, fgContrast, setFgContrast, fgBlur, setFgBlur,
         activeTab, setActiveTab, canvasRef, handleImageUpload, drawCanvas, drawCanvasForExport, handleTextChange,
         addText, deleteText, resetImageEdits, resetTextEdits,
-        tryAnotherImage, activeText, loading, generateUniqueFilename, devPerfStats, devPerfOpen, setDevPerfOpen
+        tryAnotherImage, activeText, loading, processingStep, generateUniqueFilename
     } = props;
 
 
@@ -144,6 +135,9 @@ export default function MobileEditor(props: MobileEditorProps) {
 
     // Debounce ref for mobile slider performance
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Frame skipping for ultra-smooth performance
+    const lastDrawTimeRef = useRef<number>(0);
 
     // Dynamic viewport height for mobile browsers
     const [viewportHeight, setViewportHeight] = useState('100vh');
@@ -166,55 +160,18 @@ export default function MobileEditor(props: MobileEditorProps) {
         requestAnimationFrame(update);
     }, []);
 
-    // Device capability detection for performance optimization
-    const [deviceCapability, setDeviceCapability] = useState<'high' | 'medium' | 'low'>('high');
-
-    useEffect(() => {
-        // Detect device capability based on hardware concurrency and memory
-        const detectCapability = () => {
-            const cores = navigator.hardwareConcurrency || 2;
-            const isMobile = window.innerWidth < 1024;
-            const isSlowMobile = /Android.*(?:2\.|3\.|4\.0|4\.1|4\.2|4\.3)/.test(navigator.userAgent) ||
-                                /iPhone.*(?:4|5|6|7|8)/.test(navigator.userAgent);
-
-            if (isSlowMobile || (isMobile && cores <= 2)) {
-                setDeviceCapability('low');
-            } else if (isMobile && cores <= 4) {
-                setDeviceCapability('medium');
-            } else {
-                setDeviceCapability('high');
-            }
-        };
-
-        detectCapability();
-    }, []);
-
-    // Optimized mobile text change handler with adaptive debouncing
+    // Optimized mobile text change handler with fixed 16ms debouncing (60fps cap)
     const handleMobileTextChange = useCallback((key: keyof TextSettings, value: TextSettings[keyof TextSettings]) => {
         // Clear any pending debounce
         if (debounceTimeoutRef.current) {
             clearTimeout(debounceTimeoutRef.current);
         }
 
-        // Set rapid editing flag for performance optimization
-        setIsRapidTextEditing(true);
-
-        // Adaptive debounce based on device capability and property type
-        let debounceTime = 16; // Base 60fps debounce
-
-        if (deviceCapability === 'low') {
-            debounceTime = key === 'position' || key === 'sliderX' || key === 'sliderY' ? 100 : 50;
-        } else if (deviceCapability === 'medium') {
-            debounceTime = key === 'position' || key === 'sliderX' || key === 'sliderY' ? 50 : 25;
-        }
-
-        // Debounce the state update for smooth mobile performance
+        // Ultra-fast 12ms debounce for maximum responsiveness on all devices
         debounceTimeoutRef.current = setTimeout(() => {
             handleTextChange(key, value);
-            // Clear rapid editing flag after debounce
-            setTimeout(() => setIsRapidTextEditing(false), 100);
-        }, debounceTime);
-    }, [handleTextChange, deviceCapability]);
+        }, 12);
+    }, [handleTextChange]);
 
     // Add moveTextLayerUp and moveTextLayerDown functions for mobile
     const moveTextLayerUp = (index: number) => {
@@ -241,23 +198,19 @@ export default function MobileEditor(props: MobileEditorProps) {
         // Draw canvas for export (without border indicator)
         drawCanvasForExport();
 
-        // Determine appropriate quality based on canvas size to keep file size reasonable
-        let quality = 0.8; // Slightly lower default for mobile (saves bandwidth)
-        const maxPixels = canvas.width * canvas.height;
-
-        // Adjust quality based on image size to keep file size reasonable
-        if (maxPixels > 4000000) { // 4K equivalent
-            quality = 0.6; // Lower quality for very large images on mobile
-        } else if (maxPixels > 2000000) { // 2K equivalent
-            quality = 0.7; // Lower quality for large images on mobile
-        } else if (maxPixels < 500000) { // Small images
-            quality = 0.9; // Higher quality for small images
-        }
+        // Use JPEG format with quality 0.7 for smaller file sizes on mobile
+        const quality = 0.7;
 
         const link = document.createElement('a');
-        link.download = generateUniqueFilename();
-        link.href = canvas.toDataURL('image/png', quality);
+        const filename = generateUniqueFilename().replace('.png', '.jpg');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/jpeg', quality);
         link.click();
+        
+        // Cleanup blob URL
+        setTimeout(() => {
+            URL.revokeObjectURL(link.href);
+        }, 100);
 
         // Redraw canvas with border indicator for editing
         drawCanvas();
@@ -280,16 +233,35 @@ export default function MobileEditor(props: MobileEditorProps) {
     // On text add, initialize with sliderX: 0, sliderY: 0
     // Remove any useState for sliderX/sliderY and any references to setSliderX/setSliderY. Only use activeText.sliderX and handleTextChange('sliderX', val).
 
-    // Performance optimization state
-    const [isRapidTextEditing, setIsRapidTextEditing] = useState(false);
+    // Performance optimization state (currently unused but kept for future optimizations)
 
     // Optimized local drawing function with requestAnimationFrame and performance optimizations
     const localDrawCanvas = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas || !originalImage || !foregroundImage) return;
 
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', {
+            alpha: true,
+            desynchronized: true,
+            willReadFrequently: false
+        });
         if (!ctx) return;
+
+        // Frame skipping: skip frames if drawing too frequently (<8ms between draws)
+        const now = performance.now();
+        if (now - lastDrawTimeRef.current < 8) return;
+        lastDrawTimeRef.current = now;
+
+        // Memory pressure detection and cache clearing
+        if (typeof performance !== 'undefined' && (performance as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory) {
+            const memInfo = (performance as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
+            if (memInfo) {
+                const memoryPressure = memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit;
+                if (memoryPressure > 0.7) {
+                    clearTextMeasurementCache();
+                }
+            }
+        }
 
         // Cancel any pending animation frame
         if (animationFrameRef.current) {
@@ -298,10 +270,9 @@ export default function MobileEditor(props: MobileEditorProps) {
 
         // Schedule the draw operation with performance optimization
         animationFrameRef.current = requestAnimationFrame(() => {
-            // Performance optimization: Reduce quality during rapid text editing on mobile
-            const useHighQuality = !isRapidTextEditing || deviceCapability === 'high';
+            // Performance optimization: Use consistent quality for smooth rendering
             ctx.imageSmoothingEnabled = true;
-            ctx.imageSmoothingQuality = useHighQuality ? 'high' : 'low';
+            ctx.imageSmoothingQuality = 'high';
 
             canvas.width = originalImage.width;
             canvas.height = originalImage.height;
@@ -333,7 +304,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                     y: t.position.y
                 }
             }));
-            addTextToCanvas(ctx, centeredBehindTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
+            addTextToCanvas(ctx, centeredBehindTexts, undefined, true, texts, activeTextIndex, true); // Preview mode for performance
 
             ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%) ${fgBlur > 0 ? `blur(${fgBlur}px)` : ''}`.trim();
             ctx.drawImage(foregroundImage, 0, 0);
@@ -347,9 +318,9 @@ export default function MobileEditor(props: MobileEditorProps) {
                     y: t.position.y
                 }
             }));
-            addTextToCanvas(ctx, centeredOnTopTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
+            addTextToCanvas(ctx, centeredOnTopTexts, undefined, true, texts, activeTextIndex, true); // Preview mode for performance
         });
-    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, bgBlur, useCustomBg, customBgColor, fgBrightness, fgContrast, fgBlur, activeTextIndex, canvasRef, isRapidTextEditing, deviceCapability]);
+    }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, bgBlur, useCustomBg, customBgColor, fgBrightness, fgContrast, fgBlur, activeTextIndex, canvasRef]);
 
     useEffect(() => {
         localDrawCanvas();
@@ -463,7 +434,9 @@ export default function MobileEditor(props: MobileEditorProps) {
                     <section className="flex flex-col flex-1 w-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-[var(--border)] overflow-hidden relative min-h-0">
                         {loading && (
                             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[var(--background)]/60 backdrop-blur-sm animate-fade-in">
-                                <span className="text-lg font-semibold text-[var(--foreground)] animate-pulse">Processing image...</span>
+                                <span className="text-lg font-semibold text-[var(--foreground)] animate-pulse">
+                                    {processingStep || 'Processing image...'}
+                                </span>
                             </div>
                         )}
                         <div className="flex-1 w-full overflow-hidden flex items-center justify-center min-h-0">
@@ -1019,33 +992,6 @@ export default function MobileEditor(props: MobileEditorProps) {
             </div>
             <Toaster />
 
-            {process.env.NODE_ENV === 'development' && (
-                <div className="fixed bottom-4 right-4 z-[9999] w-64 max-w-[80vw] rounded-md border border-[var(--border)] bg-[var(--background)]/95 backdrop-blur p-2 text-xs shadow-md">
-                    <div className="flex items-center justify-between mb-1">
-                        <span className="font-semibold">Dev Performance</span>
-                        <button onClick={() => setDevPerfOpen((v)=>!v)} className="px-2 py-0.5 rounded border hover:bg-[var(--secondary)]">{devPerfOpen ? 'Hide' : 'Show'}</button>
-                    </div>
-                    {devPerfOpen && (
-                        <div className="space-y-1">
-                        <div className="flex justify-between"><span>Fast Mode</span><span>ON</span></div>
-                        <div className="flex justify-between"><span>Device</span><span>Mobile</span></div>
-                        <div className="flex justify-between"><span>Module cached</span><span>{String(devPerfStats?.moduleCached)}</span></div>
-                        <div className="flex justify-between"><span>Module load</span><span>{Math.round(devPerfStats?.moduleLoadMs ?? 0)} ms</span></div>
-                        <div className="flex justify-between"><span>Cache hits</span><span>{devPerfStats?.cacheHits ?? 0}</span></div>
-                        <div className="flex justify-between"><span>ImageBitmap</span><span>{Math.round(devPerfStats?.lastImageBitmapMs ?? 0)} ms</span></div>
-                        <div className="flex justify-between"><span>Process (mask)</span><span>{Math.round(devPerfStats?.lastProcessMs ?? 0)} ms</span></div>
-                        <div className="flex justify-between"><span>Composite</span><span>{Math.round(devPerfStats?.lastCompositeMs ?? 0)} ms</span></div>
-                        <div className="flex justify-between"><span>Total</span><span>{Math.round(devPerfStats?.lastTotalMs ?? 0)} ms</span></div>
-                            {typeof (performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory !== 'undefined' && (
-                                <div className="pt-1 border-t mt-1">
-                                    <div className="flex justify-between"><span>JS Heap Used</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.usedJSHeapSize ?? 0) / 1024 / 1024)} MB</span></div>
-                                    <div className="flex justify-between"><span>JS Heap Total</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.totalJSHeapSize ?? 0) / 1024 / 1024)} MB</span></div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            )}
 
             {/* In the JSX, add a hidden canvas for measuring */}
             <canvas ref={measureCanvasRef} style={{ display: 'none' }} />

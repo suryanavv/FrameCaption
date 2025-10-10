@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { IconError404, IconArrowLeft, IconHome } from '@tabler/icons-react';
+import { IconError404, IconHome } from '@tabler/icons-react';
 
 export default function NotFound() {
   const router = useRouter();

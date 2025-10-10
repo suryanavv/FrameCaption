@@ -33,13 +33,19 @@ export interface TextSettings {
     textBackgroundPadding?: number;
   }
   
-  // Simple cache for text measurements to improve performance
+  // Aggressive cache for text measurements and rendering to improve performance
 const textMeasurementCache = new Map<string, TextMetrics>();
+const textRenderCache = new Map<string, { width: number; height: number; lines: string[] }>();
 const getTextMeasurementKey = (text: string, font: string) => `${font}_${text}`;
+const getTextRenderKey = (settings: TextSettings) => {
+  const { content, font, fontSize, fontWeight, fontStyle, lineHeight } = settings;
+  return `${content}_${font}_${fontSize}_${fontWeight}_${fontStyle}_${lineHeight}`;
+};
 
-// Function to clear text measurement cache (useful for memory management)
+// Function to clear text caches (useful for memory management)
 export function clearTextMeasurementCache() {
   textMeasurementCache.clear();
+  textRenderCache.clear();
 }
 
 export function addTextToCanvas(
@@ -48,7 +54,8 @@ export function addTextToCanvas(
     activeTextIndex?: number,
     showBorderIndicator: boolean = true,
     allTexts?: TextSettings[],
-    globalActiveIndex?: number
+    globalActiveIndex?: number,
+    isPreview: boolean = false
   ) {
     const layers = Array.isArray(textSettings) ? textSettings : [textSettings];
     for (let i = 0; i < layers.length; i++) {
@@ -89,11 +96,6 @@ export function addTextToCanvas(
       ctx.translate(position.x, position.y);
       if (rotation) ctx.rotate((rotation * Math.PI) / 180);
 
-      // Letter spacing and line height
-      const lines = content.split('\n');
-      let maxWidth = 0;
-      const totalHeight = lines.length * actualFontSize * lineHeight;
-
       // Cached text measurement function
       const measureTextCached = (text: string): TextMetrics => {
         const cacheKey = getTextMeasurementKey(text, fontString);
@@ -112,57 +114,132 @@ export function addTextToCanvas(
         return metrics;
       };
 
-      // Calculate text dimensions for background
-      let textMaxWidth = 0;
-      for (let j = 0; j < lines.length; j++) {
-        const lineWidth = measureTextCached(lines[j]).width;
-        if (lineWidth > textMaxWidth) textMaxWidth = lineWidth;
+      // Check render cache first for performance boost
+      const renderKey = getTextRenderKey(settings);
+      const cachedRender = textRenderCache.get(renderKey);
+
+      let lines: string[];
+      let maxWidth = 0;
+      let totalHeight = 0;
+
+      if (cachedRender) {
+        lines = cachedRender.lines;
+        maxWidth = cachedRender.width;
+        totalHeight = cachedRender.height;
+      } else {
+        // Calculate text dimensions
+        lines = content.split('\n');
+        totalHeight = lines.length * actualFontSize * lineHeight;
+
+        // Calculate max width for caching
+        for (let j = 0; j < lines.length; j++) {
+          const lineWidth = measureTextCached(lines[j]).width;
+          if (lineWidth > maxWidth) maxWidth = lineWidth;
+        }
+
+        // Cache the render info
+        textRenderCache.set(renderKey, {
+          width: maxWidth,
+          height: totalHeight,
+          lines: lines
+        });
+
+        // Limit render cache size
+        if (textRenderCache.size > 500) {
+          const firstKey = textRenderCache.keys().next().value;
+          if (firstKey) {
+            textRenderCache.delete(firstKey);
+          }
+        }
       }
 
-      // Draw text background if enabled
-      if (textBackgroundEnabled && content.trim()) {
-        ctx.save();
-        ctx.globalAlpha = textBackgroundOpacity;
-        ctx.fillStyle = textBackgroundColor;
-        const bgWidth = textMaxWidth + (textBackgroundPadding * 2);
-        const bgHeight = totalHeight + (textBackgroundPadding * 2);
-        const bgX = -bgWidth / 2;
-        const bgY = -bgHeight / 2;
-        ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
-        ctx.restore();
-      }
-      // Calculate bounding box for indicator
-      for (let j = 0; j < lines.length; j++) {
-        const lineWidth = measureTextCached(lines[j]).width;
-        if (lineWidth > maxWidth) maxWidth = lineWidth;
-      }
-      // Draw text
-      for (let j = 0; j < lines.length; j++) {
-        const y = (j * actualFontSize * lineHeight) - (totalHeight / 2) + (actualFontSize * lineHeight) / 2;
-        // Calculate line width
-        const lineWidth = measureTextCached(lines[j]).width;
-        // Center the line horizontally
-        const currentX = 0;
-        // Draw text shadow if enabled
+      const isSingleLine = lines.length === 1;
+
+      // Fast path for single-line text (most common case)
+      if (isSingleLine) {
+        const lineWidth = measureTextCached(lines[0]).width;
+        maxWidth = lineWidth;
+        
+        // Draw text background if enabled (simplified for single line)
+        if (textBackgroundEnabled && content.trim()) {
+          ctx.save();
+          ctx.globalAlpha = textBackgroundOpacity;
+          ctx.fillStyle = textBackgroundColor;
+          const bgWidth = lineWidth + (textBackgroundPadding * 2);
+          const bgHeight = actualFontSize * lineHeight + (textBackgroundPadding * 2);
+          ctx.fillRect(-bgWidth / 2, -bgHeight / 2, bgWidth, bgHeight);
+          ctx.restore();
+        }
+        
+        // Draw text shadow if enabled (reduce blur during preview for performance)
         if (textShadowEnabled) {
           ctx.save();
           ctx.shadowColor = textShadowColor;
-          ctx.shadowBlur = textShadowBlur;
+          ctx.shadowBlur = isPreview ? Math.min(textShadowBlur, 2) : textShadowBlur;
           ctx.shadowOffsetX = textShadowOffsetX;
           ctx.shadowOffsetY = textShadowOffsetY;
           ctx.fillStyle = color;
-          ctx.fillText(lines[j], 0, y);
+          ctx.fillText(lines[0], 0, 0);
           ctx.restore();
         }
 
         // Draw main text
         ctx.fillStyle = color;
-        ctx.fillText(lines[j], 0, y);
+        ctx.fillText(lines[0], 0, 0);
 
         if (strokeColor && strokeWidth) {
           ctx.lineWidth = strokeWidth;
           ctx.strokeStyle = strokeColor;
-          ctx.strokeText(lines[j], 0, y);
+          ctx.strokeText(lines[0], 0, 0);
+        }
+      } else {
+        // Multi-line text path
+        // Calculate text dimensions for background
+        let textMaxWidth = 0;
+        for (let j = 0; j < lines.length; j++) {
+          const lineWidth = measureTextCached(lines[j]).width;
+          if (lineWidth > textMaxWidth) textMaxWidth = lineWidth;
+          if (lineWidth > maxWidth) maxWidth = lineWidth;
+        }
+
+        // Draw text background if enabled
+        if (textBackgroundEnabled && content.trim()) {
+          ctx.save();
+          ctx.globalAlpha = textBackgroundOpacity;
+          ctx.fillStyle = textBackgroundColor;
+          const bgWidth = textMaxWidth + (textBackgroundPadding * 2);
+          const bgHeight = totalHeight + (textBackgroundPadding * 2);
+          const bgX = -bgWidth / 2;
+          const bgY = -bgHeight / 2;
+          ctx.fillRect(bgX, bgY, bgWidth, bgHeight);
+          ctx.restore();
+        }
+        
+        // Draw text lines
+        for (let j = 0; j < lines.length; j++) {
+          const y = (j * actualFontSize * lineHeight) - (totalHeight / 2) + (actualFontSize * lineHeight) / 2;
+          
+          // Draw text shadow if enabled (reduce blur during preview)
+          if (textShadowEnabled) {
+            ctx.save();
+            ctx.shadowColor = textShadowColor;
+            ctx.shadowBlur = isPreview ? Math.min(textShadowBlur, 2) : textShadowBlur;
+            ctx.shadowOffsetX = textShadowOffsetX;
+            ctx.shadowOffsetY = textShadowOffsetY;
+            ctx.fillStyle = color;
+            ctx.fillText(lines[j], 0, y);
+            ctx.restore();
+          }
+
+          // Draw main text
+          ctx.fillStyle = color;
+          ctx.fillText(lines[j], 0, y);
+
+          if (strokeColor && strokeWidth) {
+            ctx.lineWidth = strokeWidth;
+            ctx.strokeStyle = strokeColor;
+            ctx.strokeText(lines[j], 0, y);
+          }
         }
       }
       // Draw indicator if this is the active text and showBorderIndicator is true

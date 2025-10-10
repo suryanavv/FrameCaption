@@ -21,7 +21,7 @@ import { inter, poppins, montserrat, playfairDisplay, merriweather, lora, dancin
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { HexColorPicker } from "react-colorful";
 import dynamic from 'next/dynamic';
-import { getBackgroundRemovalStats, setBackgroundRemovalConfig } from '@/lib/backgroundRemoval';
+import { clearTextMeasurementCache } from '@/lib/textRendering';
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 const MobileEditor = dynamic(() => import('./MobileEditor'), { ssr: false });
@@ -128,19 +128,9 @@ export default function EditorPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isMobile, setIsMobile] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [processingStep, setProcessingStep] = useState<string>('');
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-    const [devPerfOpen, setDevPerfOpen] = useState(false);
-    const [devPerfStats, setDevPerfStats] = useState<{
-        moduleCached: boolean;
-        moduleLoadMs?: number;
-        cacheHits: number;
-        lastImageBitmapMs?: number;
-        lastProcessMs?: number;
-        lastCompositeMs?: number;
-        lastTotalMs?: number;
-    } | null>(null);
-    const [fastMode, setFastMode] = useState(true);
 
 
 
@@ -156,12 +146,71 @@ export default function EditorPage() {
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
-            setImage(file);
+            setLoading(true);
+            
+            try {
+                // Load and preprocess image
+                setProcessingStep('Loading image...');
+                const img = document.createElement('img') as HTMLImageElement;
+                const fileUrl = URL.createObjectURL(file);
+                img.src = fileUrl;
 
-            const img = document.createElement('img') as HTMLImageElement;
-            img.src = URL.createObjectURL(file);
-            img.onload = async () => {
-                setOriginalImage(img);
+                await new Promise<void>((resolve, reject) => {
+                    img.onload = () => resolve();
+                    img.onerror = reject;
+                });
+                
+                // Preprocess: resize if larger than 1200px max dimension
+                let processedFile = file;
+                const maxDim = Math.max(img.width, img.height);
+
+                if (maxDim > 1200) {
+                    setProcessingStep('Optimizing image size...');
+                    const scale = 1200 / maxDim;
+                    const targetW = Math.floor(img.width * scale);
+                    const targetH = Math.floor(img.height * scale);
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = targetW;
+                    canvas.height = targetH;
+                    const ctx = canvas.getContext('2d');
+
+                    if (ctx) {
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, targetW, targetH);
+
+                        // Convert to WebP blob for better compression
+                        const blob = await new Promise<Blob | null>(resolve =>
+                            canvas.toBlob(resolve, 'image/webp', 0.9)
+                        );
+
+                        if (blob) {
+                            processedFile = new File([blob], file.name.replace(/\.\w+$/, '.webp'), { type: 'image/webp' });
+
+                            // Reload the preprocessed image
+                            const preprocessedImg = document.createElement('img');
+                            preprocessedImg.src = URL.createObjectURL(processedFile);
+                            await new Promise<void>((resolve, reject) => {
+                                preprocessedImg.onload = () => resolve();
+                                preprocessedImg.onerror = reject;
+                            });
+
+                            setOriginalImage(preprocessedImg);
+                            URL.revokeObjectURL(fileUrl);
+                        } else {
+                            setOriginalImage(img);
+                        }
+                    } else {
+                        setOriginalImage(img);
+                    }
+                } else {
+                    setOriginalImage(img);
+                }
+
+                setProcessingStep('Processing image...');
+                
+                setImage(processedFile);
                 setTexts((prev) => {
                     const newTexts = [...prev];
                     newTexts[activeTextIndex] = {
@@ -170,45 +219,73 @@ export default function EditorPage() {
                     };
                     return newTexts;
                 });
-                setLoading(true);
-                try {
-                    // Configure fast/quality mode - very aggressive for mobile
-                    const scale = fastMode ? (isMobile ? 0.2 : 0.4) : 1;
-                    setBackgroundRemovalConfig({ processingScale: scale });
-                    console.log(`[DEBUG] Processing at scale: ${scale}, isMobile: ${isMobile}, fastMode: ${fastMode}`);
-                    const fg = await removeImageBackground(file);
-                    setForegroundImage(fg);
-                    if (process.env.NODE_ENV === 'development') {
-                        setDevPerfStats(getBackgroundRemovalStats());
-                        setDevPerfOpen(true);
-                    }
-                } finally {
-                    setLoading(false);
-                }
-            };
+                
+                // Remove background with optimized settings (always aggressive)
+                const fg = await removeImageBackground(processedFile);
+                setForegroundImage(fg);
+                
+                setProcessingStep('Finalizing...');
+
+                setProcessingStep('');
+            } catch (error) {
+                console.error('Error processing image:', error);
+                setProcessingStep('');
+            } finally {
+                setLoading(false);
+            }
         }
     };
 
     // Animation frame ref for smooth updates
     const animationFrameRef = useRef<number | null>(null);
 
-    // Optimized drawing function with requestAnimationFrame
+    // Optimized drawing with frame skipping for ultra-smooth performance
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const lastDrawTimeRef = useRef<number>(0);
+
     const drawCanvas = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas || !originalImage || !foregroundImage) return;
 
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', {
+            alpha: true,
+            desynchronized: true,
+            willReadFrequently: false
+        });
         if (!ctx) return;
 
-        // Cancel any pending animation frame
+        // Frame skipping: skip frames if drawing too frequently (<8ms between draws)
+        const now = performance.now();
+        if (now - lastDrawTimeRef.current < 8) return;
+        lastDrawTimeRef.current = now;
+
+        // Memory pressure detection and cache clearing
+        if (typeof performance !== 'undefined' && (performance as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory) {
+            const memInfo = (performance as { memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number } }).memory;
+            if (memInfo) {
+                const memoryPressure = memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit;
+                if (memoryPressure > 0.7) {
+                    clearTextMeasurementCache();
+                }
+            }
+        }
+
+        // Cancel any pending operations
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
         if (animationFrameRef.current) {
             cancelAnimationFrame(animationFrameRef.current);
         }
 
-        // Schedule the draw operation
-        animationFrameRef.current = requestAnimationFrame(() => {
-            canvas.width = originalImage.width;
-            canvas.height = originalImage.height;
+        debounceTimerRef.current = setTimeout(() => {
+            animationFrameRef.current = requestAnimationFrame(() => {
+                canvas.width = originalImage.width;
+                canvas.height = originalImage.height;
+                
+                // Aggressive performance optimizations
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'medium'; // Balance quality and speed
 
             // Draw background
             if (useCustomBg) {
@@ -231,31 +308,32 @@ export default function EditorPage() {
             const behindTexts = texts.filter(t => !t.onTop);
             const onTopTexts = texts.filter(t => t.onTop);
 
-            // Draw texts behind foreground
-            const centeredBehindTexts = behindTexts.map((t) => ({
-                ...t,
-                position: {
-                    x: t.position.x,
-                    y: t.position.y
-                }
-            }));
-            addTextToCanvas(ctx, centeredBehindTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
+                // Draw texts behind foreground
+                const centeredBehindTexts = behindTexts.map((t) => ({
+                    ...t,
+                    position: {
+                        x: t.position.x,
+                        y: t.position.y
+                    }
+                }));
+                addTextToCanvas(ctx, centeredBehindTexts, undefined, true, texts, activeTextIndex, true); // Preview mode for performance
 
-            // Draw foreground
-            ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%) ${fgBlur > 0 ? `blur(${fgBlur}px)` : ''}`.trim();
-            ctx.drawImage(foregroundImage, 0, 0);
-            ctx.filter = 'none';
+                // Draw foreground
+                ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%) ${fgBlur > 0 ? `blur(${fgBlur}px)` : ''}`.trim();
+                ctx.drawImage(foregroundImage, 0, 0);
+                ctx.filter = 'none';
 
-            // Draw texts on top of foreground
-            const centeredOnTopTexts = onTopTexts.map((t) => ({
-                ...t,
-                position: {
-                    x: t.position.x,
-                    y: t.position.y
-                }
-            }));
-            addTextToCanvas(ctx, centeredOnTopTexts, undefined, true, texts, activeTextIndex); // Show border indicator for editing
-        });
+                // Draw texts on top of foreground
+                const centeredOnTopTexts = onTopTexts.map((t) => ({
+                    ...t,
+                    position: {
+                        x: t.position.x,
+                        y: t.position.y
+                    }
+                }));
+                addTextToCanvas(ctx, centeredOnTopTexts, undefined, true, texts, activeTextIndex, true); // Preview mode for performance
+            });
+        }, 12); // 12ms debounce for ultra-responsive performance
     }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, bgBlur, useCustomBg, customBgColor, fgBrightness, fgContrast, fgBlur, activeTextIndex]);
 
     // Optimized export drawing function
@@ -288,7 +366,7 @@ export default function EditorPage() {
         const behindTexts = texts.filter(t => !t.onTop);
         const onTopTexts = texts.filter(t => t.onTop);
 
-        // Draw texts behind foreground
+        // Draw texts behind foreground (high quality for export)
         const centeredBehindTexts = behindTexts.map((t) => ({
             ...t,
             position: {
@@ -296,14 +374,14 @@ export default function EditorPage() {
                 y: t.position.y
             }
         }));
-        addTextToCanvas(ctx, centeredBehindTexts, undefined, false, texts, activeTextIndex); // Hide border indicator for export
+        addTextToCanvas(ctx, centeredBehindTexts, undefined, false, texts, activeTextIndex, false); // High quality, no border for export
 
         // Draw foreground
         ctx.filter = `brightness(${fgBrightness}%) contrast(${fgContrast}%) ${fgBlur > 0 ? `blur(${fgBlur}px)` : ''}`.trim();
         ctx.drawImage(foregroundImage, 0, 0);
         ctx.filter = 'none';
 
-        // Draw texts on top of foreground
+        // Draw texts on top of foreground (high quality for export)
         const centeredOnTopTexts = onTopTexts.map((t) => ({
             ...t,
             position: {
@@ -311,18 +389,21 @@ export default function EditorPage() {
                 y: t.position.y
             }
         }));
-        addTextToCanvas(ctx, centeredOnTopTexts, undefined, false, texts, activeTextIndex); // Hide border indicator for export
+        addTextToCanvas(ctx, centeredOnTopTexts, undefined, false, texts, activeTextIndex, false); // High quality, no border for export
     }, [originalImage, foregroundImage, texts, bgBrightness, bgContrast, bgBlur, useCustomBg, customBgColor, fgBrightness, fgContrast, fgBlur, activeTextIndex]);
 
     useEffect(() => {
         drawCanvas();
     }, [drawCanvas]);
 
-    // Cleanup animation frames on unmount
+    // Cleanup animation frames and debounce timers on unmount
     useEffect(() => {
         return () => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
+            }
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
             }
         };
     }, []);
@@ -387,23 +468,19 @@ export default function EditorPage() {
         // Draw canvas for export (without border indicator)
         drawCanvasForExport();
 
-        // Determine appropriate quality based on canvas size to keep file size reasonable
-        let quality = 0.85; // Default good quality
-        const maxPixels = canvas.width * canvas.height;
-
-        // Adjust quality based on image size to keep file size reasonable
-        if (maxPixels > 4000000) { // 4K equivalent
-            quality = 0.7; // Lower quality for very large images
-        } else if (maxPixels > 2000000) { // 2K equivalent
-            quality = 0.8; // Good quality for large images
-        } else if (maxPixels < 500000) { // Small images
-            quality = 0.95; // Higher quality for small images
-        }
-
+        // Use JPEG format with quality 0.75 for smaller file sizes
+        const quality = 0.75;
+        
         const link = document.createElement('a');
-        link.download = generateUniqueFilename();
-        link.href = canvas.toDataURL('image/png', quality);
+        const filename = generateUniqueFilename().replace('.png', '.jpg');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/jpeg', quality);
         link.click();
+        
+        // Cleanup blob URL
+        setTimeout(() => {
+            URL.revokeObjectURL(link.href);
+        }, 100);
 
         // Redraw canvas with border indicator for editing
         drawCanvas();
@@ -556,10 +633,9 @@ export default function EditorPage() {
                 activeText={activeText}
                 loading={loading}
                 setLoading={setLoading}
+                processingStep={processingStep}
+                setProcessingStep={setProcessingStep}
                 generateUniqueFilename={generateUniqueFilename}
-                devPerfStats={devPerfStats}
-                devPerfOpen={devPerfOpen}
-                setDevPerfOpen={setDevPerfOpen}
             />
         );
     }
@@ -1130,7 +1206,9 @@ export default function EditorPage() {
                     <section className="flex flex-col w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border border-[var(--border)] overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
                         {loading && (
                             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[var(--background)]/60 backdrop-blur-sm animate-fade-in">
-                                <span className="text-lg font-semibold text-[var(--foreground)] animate-pulse">Processing image...</span>
+                                <span className="text-lg font-semibold text-[var(--foreground)] animate-pulse">
+                                    {processingStep || 'Processing image...'}
+                                </span>
                             </div>
                         )}
                         <div className="w-full h-full overflow-auto flex items-center justify-center">
@@ -1178,41 +1256,6 @@ export default function EditorPage() {
 
 
             <Toaster />
-
-            {process.env.NODE_ENV === 'development' && (
-                <div className="fixed bottom-2 right-2 z-[9999] w-72 max-w-[85vw] rounded-md border border-[var(--border)] bg-[var(--background)]/95 backdrop-blur p-2 text-xs shadow-md">
-                    <div className="flex items-center justify-between mb-1 gap-2">
-                        <span className="font-semibold">Dev Performance</span>
-                        <div className="flex items-center gap-1">
-                            <label className="flex items-center gap-1 cursor-pointer select-none">
-                                <input type="checkbox" checked={fastMode} onChange={(e) => setFastMode(e.target.checked)} />
-                                <span>Fast mode</span>
-                            </label>
-                            <button onClick={() => setDevPerfOpen((v) => !v)} className="px-2 py-0.5 rounded border hover:bg-[var(--secondary)]">{devPerfOpen ? 'Hide' : 'Show'}</button>
-                        </div>
-                    </div>
-                    {devPerfOpen && (
-                        <div className="space-y-1">
-                            <div className="flex justify-between"><span>Fast Mode</span><span>{fastMode ? 'ON' : 'OFF'}</span></div>
-                            <div className="flex justify-between"><span>Device</span><span>{isMobile ? 'Mobile' : 'Desktop'}</span></div>
-                            <div className="flex justify-between"><span>Module cached</span><span>{String(devPerfStats?.moduleCached)}</span></div>
-                            <div className="flex justify-between"><span>Module load</span><span>{Math.round(devPerfStats?.moduleLoadMs ?? 0)} ms</span></div>
-                            <div className="flex justify-between"><span>Cache hits</span><span>{devPerfStats?.cacheHits ?? 0}</span></div>
-                            <div className="flex justify-between"><span>ImageBitmap</span><span>{Math.round(devPerfStats?.lastImageBitmapMs ?? 0)} ms</span></div>
-                            <div className="flex justify-between"><span>Process (mask)</span><span>{Math.round(devPerfStats?.lastProcessMs ?? 0)} ms</span></div>
-                            <div className="flex justify-between"><span>Composite</span><span>{Math.round(devPerfStats?.lastCompositeMs ?? 0)} ms</span></div>
-                            <div className="flex justify-between"><span>Total</span><span>{Math.round(devPerfStats?.lastTotalMs ?? 0)} ms</span></div>
-                            {typeof (performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory !== 'undefined' && (
-                                <div className="pt-1 border-t mt-1">
-                                    <div className="flex justify-between"><span>JS Heap Used</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.usedJSHeapSize ?? 0) / 1024 / 1024)} MB</span></div>
-                                    <div className="flex justify-between"><span>JS Heap Total</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.totalJSHeapSize ?? 0) / 1024 / 1024)} MB</span></div>
-                                    <div className="flex justify-between"><span>JS Heap Limit</span><span>{Math.round(((performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number } }).memory?.jsHeapSizeLimit ?? 0) / 1024 / 1024)} MB</span></div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            )}
         </div>
     );
 }

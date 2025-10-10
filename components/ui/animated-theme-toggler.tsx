@@ -66,12 +66,15 @@ export const AnimatedThemeToggler = ({ className }: AnimatedThemeTogglerProps) =
     }).ready;
 
     const { top, left, width, height } = buttonRef.current.getBoundingClientRect();
-    const y = top + height / 2;
-    const x = left + width / 2;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _y = top + height / 2;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _x = left + width / 2;
 
     const right = window.innerWidth - left;
     const bottom = window.innerHeight - top;
-    const maxRad = Math.hypot(Math.max(left, right), Math.max(top, bottom));
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const _maxRad = Math.hypot(Math.max(left, right), Math.max(top, bottom));
 
     document.documentElement.animate(
       {
