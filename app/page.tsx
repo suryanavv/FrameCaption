@@ -147,7 +147,7 @@ export default function EditorPage() {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
             setLoading(true);
-            
+
             try {
                 // Load and preprocess image
                 setProcessingStep('Loading image...');
@@ -159,7 +159,7 @@ export default function EditorPage() {
                     img.onload = () => resolve();
                     img.onerror = reject;
                 });
-                
+
                 // Preprocess: resize if larger than 1200px max dimension
                 let processedFile = file;
                 const maxDim = Math.max(img.width, img.height);
@@ -209,7 +209,7 @@ export default function EditorPage() {
                 }
 
                 setProcessingStep('Processing image...');
-                
+
                 setImage(processedFile);
                 setTexts((prev) => {
                     const newTexts = [...prev];
@@ -219,11 +219,11 @@ export default function EditorPage() {
                     };
                     return newTexts;
                 });
-                
+
                 // Remove background with optimized settings (always aggressive)
                 const fg = await removeImageBackground(processedFile);
                 setForegroundImage(fg);
-                
+
                 setProcessingStep('Finalizing...');
 
                 setProcessingStep('');
@@ -282,31 +282,31 @@ export default function EditorPage() {
             animationFrameRef.current = requestAnimationFrame(() => {
                 canvas.width = originalImage.width;
                 canvas.height = originalImage.height;
-                
+
                 // Aggressive performance optimizations
                 ctx.imageSmoothingEnabled = true;
                 ctx.imageSmoothingQuality = 'medium'; // Balance quality and speed
 
-            // Draw background
-            if (useCustomBg) {
-                // Draw custom colored background
-                ctx.fillStyle = customBgColor;
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.filter = `${bgBlur > 0 ? `blur(${bgBlur}px)` : ''}`.trim();
-                if (bgBlur > 0) {
-                    // Apply blur to the colored background
-                    ctx.filter = `blur(${bgBlur}px)`;
+                // Draw background
+                if (useCustomBg) {
+                    // Draw custom colored background
+                    ctx.fillStyle = customBgColor;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.filter = `${bgBlur > 0 ? `blur(${bgBlur}px)` : ''}`.trim();
+                    if (bgBlur > 0) {
+                        // Apply blur to the colored background
+                        ctx.filter = `blur(${bgBlur}px)`;
+                    }
+                } else {
+                    // Draw original background with filters
+                    ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%) ${bgBlur > 0 ? `blur(${bgBlur}px)` : ''}`.trim();
+                    ctx.drawImage(originalImage, 0, 0);
                 }
-            } else {
-                // Draw original background with filters
-                ctx.filter = `brightness(${bgBrightness}%) contrast(${bgContrast}%) ${bgBlur > 0 ? `blur(${bgBlur}px)` : ''}`.trim();
-                ctx.drawImage(originalImage, 0, 0);
-            }
-            ctx.filter = 'none';
+                ctx.filter = 'none';
 
-            // Separate texts by layer position
-            const behindTexts = texts.filter(t => !t.onTop);
-            const onTopTexts = texts.filter(t => t.onTop);
+                // Separate texts by layer position
+                const behindTexts = texts.filter(t => !t.onTop);
+                const onTopTexts = texts.filter(t => t.onTop);
 
                 // Draw texts behind foreground
                 const centeredBehindTexts = behindTexts.map((t) => ({
@@ -470,13 +470,13 @@ export default function EditorPage() {
 
         // Use JPEG format with quality 0.75 for smaller file sizes
         const quality = 0.75;
-        
+
         const link = document.createElement('a');
         const filename = generateUniqueFilename().replace('.png', '.jpg');
         link.download = filename;
         link.href = canvas.toDataURL('image/jpeg', quality);
         link.click();
-        
+
         // Cleanup blob URL
         setTimeout(() => {
             URL.revokeObjectURL(link.href);
@@ -643,7 +643,7 @@ export default function EditorPage() {
     return (
         <div className="flex flex-col lg:flex-row p-1.5 w-full h-screen max-h-screen overflow-hidden">
             {/* Mobile Top Header */}
-            {/* <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-[var(--secondary)]/80 backdrop-blur-md rounded-[var(--radius-sm)] border border-[var(--border)] w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto mb-2 lg:hidden">
+            {/* <header className="sticky top-0 z-30 flex h-10 items-center justify-center bg-card/80 backdrop-blur-md rounded-[var(--radius-sm)] border border-border w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto mb-2 lg:hidden">
                 <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                     <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
                     FrameCaption
@@ -654,7 +654,7 @@ export default function EditorPage() {
                 {/* Left Sidebar - Controls */}
                 <aside className="flex flex-col gap-1 w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] h-auto lg:h-full overflow-visible lg:overflow-hidden order-2 lg:order-1 mb-2 lg:mb-0">
                     {/* Desktop Sidebar Header */}
-                    <header className="hidden lg:flex h-10 items-center justify-center bg-[var(--secondary)] backdrop-blur-md rounded-[var(--radius-sm)] border border-[var(--border)] w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto">
+                    <header className="hidden lg:flex h-10 items-center justify-center bg-sidebar backdrop-blur-md rounded-[var(--radius-sm)] border border-sidebar-border w-full max-w-full sm:max-w-[360px] lg:max-w-[250px] mx-auto">
                         <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                             <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
                             FrameCaption
@@ -666,14 +666,14 @@ export default function EditorPage() {
                         <TabsList className="w-full flex items-center gap-1 h-8 lg:h-10 rounded-[var(--radius-sm)]">
                             <TabsTrigger
                                 value={"text"}
-                                className="flex-1 text-xs border border-[var(--border)] p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
+                                className="flex-1 text-xs border border-border p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
                             >
                                 <IconTypography className="w-2.5 h-2.5 mb-0.5" />
                                 <span className="text-[0.625rem]">Text</span>
                             </TabsTrigger>
                             <TabsTrigger
                                 value={"image"}
-                                className="flex-1 text-xs border border-[var(--border)] p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
+                                className="flex-1 text-xs border border-border p-1 lg:p-2 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
                             >
                                 <IconPhoto className="w-2.5 h-2.5 mb-0.5" />
                                 <span className="text-[0.625rem]">Image</span>
@@ -681,7 +681,7 @@ export default function EditorPage() {
                         </TabsList>
                     </Tabs>
 
-                    <section className="w-full bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] flex flex-col min-h-[400px] h-auto lg:h-full border border-[var(--border)]">
+                    <section className="w-full bg-sidebar backdrop-blur-sm rounded-[var(--radius-sm)] flex flex-col min-h-[400px] h-auto lg:h-full border border-sidebar-border">
                         {/* Scrollable Content Area */}
                         <div className="flex flex-col flex-1 min-h-0 overflow-y-auto no-scrollbar p-3">
                             {activeTab === "text" && (
@@ -689,7 +689,7 @@ export default function EditorPage() {
                                     {/* Text Layers */}
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Text Layers</Label>
+                                            <Label className="text-xs text-muted-foreground">Text Layers</Label>
                                             <Button variant="outline" size="sm" onClick={addText} className="w-full text-xs h-7 px-2 cursor-pointer">
                                                 Add
                                             </Button>
@@ -706,9 +706,9 @@ export default function EditorPage() {
                                                         onDragLeave={handleDragLeave}
                                                         onDrop={(e) => handleDrop(e, originalIndex)}
                                                         onDragEnd={handleDragEnd}
-                                                        className={`flex items-center justify-between p-2 rounded-[var(--radius-sm)] transition-all cursor-pointer ${activeTextIndex === originalIndex ? 'bg-[var(--primary)]/10' : 'hover:bg-[var(--primary)]/5'
+                                                        className={`flex items-center justify-between p-2 rounded-[var(--radius-sm)] transition-all cursor-pointer ${activeTextIndex === originalIndex ? 'bg-sidebar-accent' : 'hover:bg-sidebar-accent'
                                                             } ${draggedIndex === originalIndex ? 'opacity-50' : ''
-                                                            } ${dragOverIndex === originalIndex ? 'border-2 border-[var(--primary)]/50 bg-[var(--primary)]/5' : ''
+                                                            } ${dragOverIndex === originalIndex ? 'border-2 border-sidebar-ring bg-sidebar-accent' : ''
                                                             }`}
                                                         onClick={() => setActiveTextIndex(originalIndex)}
                                                     >
@@ -733,8 +733,8 @@ export default function EditorPage() {
                                     {/* Layer Position Switch */}
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <IconArrowNarrowUp className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                            <Label className="text-xs text-[var(--muted-foreground)]">On Top</Label>
+                                            <IconArrowNarrowUp className="w-4 h-4 text-muted-foreground" />
+                                            <Label className="text-xs text-muted-foreground">On Top</Label>
                                         </div>
                                         <Switch
                                             checked={activeText.onTop ?? false}
@@ -744,7 +744,7 @@ export default function EditorPage() {
 
                                     {/* Text Content */}
                                     <div className="flex flex-col gap-2">
-                                        <Label className="text-xs text-[var(--muted-foreground)]">Content</Label>
+                                        <Label className="text-xs text-muted-foreground">Content</Label>
                                         <Textarea
                                             value={activeText.content}
                                             onChange={(e) => handleTextChange('content', e.target.value)}
@@ -755,7 +755,7 @@ export default function EditorPage() {
 
                                     {/* Font Selection */}
                                     <div className="flex flex-col gap-2">
-                                        <Label className="text-xs text-[var(--muted-foreground)]">Font</Label>
+                                        <Label className="text-xs text-muted-foreground">Font</Label>
                                         <Select value={activeText.font} onValueChange={(value) => handleTextChange('font', value)}>
                                             <SelectTrigger className="w-full h-9 text-xs">
                                                 <SelectValue placeholder="Select font" />
@@ -774,8 +774,8 @@ export default function EditorPage() {
                                     {/* Font Style Switch */}
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <IconItalic className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Italic</Label>
+                                            <IconItalic className="w-4 h-4 text-muted-foreground" />
+                                            <Label className="text-xs text-muted-foreground">Italic</Label>
                                         </div>
                                         <Switch
                                             checked={activeText.fontStyle === 'italic'}
@@ -787,12 +787,12 @@ export default function EditorPage() {
 
 
                                     <div className="flex flex-col gap-2 w-full">
-                                        <Label className="text-xs text-[var(--muted-foreground)]">Color</Label>
+                                        <Label className="text-xs text-muted-foreground">Color</Label>
                                         <div className="flex items-center gap-2 w-full relative">
                                             <Popover>
                                                 <PopoverTrigger asChild>
                                                     <span
-                                                        className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                                                        className="w-6 h-6 rounded-full aspect-square border border-sidebar-border absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                         style={{ backgroundColor: activeText.color }}
                                                     />
                                                 </PopoverTrigger>
@@ -819,7 +819,7 @@ export default function EditorPage() {
                                     {/* Typography Controls */}
                                     <div className="flex flex-col gap-3">
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Font Weight: {parseInt(activeText.fontWeight?.toString() ?? '700')}</Label>
+                                            <Label className="text-xs text-muted-foreground">Font Weight: {parseInt(activeText.fontWeight?.toString() ?? '700')}</Label>
                                             <Slider
                                                 value={[parseInt(activeText.fontWeight?.toString() ?? '700')]}
                                                 onValueChange={([val]) => handleTextChange('fontWeight', val.toString())}
@@ -829,7 +829,7 @@ export default function EditorPage() {
                                             />
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Font Size: {activeText.fontSize}%</Label>
+                                            <Label className="text-xs text-muted-foreground">Font Size: {activeText.fontSize}%</Label>
                                             <Slider
                                                 value={[activeText.fontSize]}
                                                 onValueChange={([val]) => handleTextChange('fontSize', val)}
@@ -839,7 +839,7 @@ export default function EditorPage() {
                                             />
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Opacity: {Math.round((activeText.opacity ?? 1) * 100)}%</Label>
+                                            <Label className="text-xs text-muted-foreground">Opacity: {Math.round((activeText.opacity ?? 1) * 100)}%</Label>
                                             <Slider
                                                 value={[activeText.opacity ?? 1]}
                                                 onValueChange={([val]) => handleTextChange('opacity', val)}
@@ -848,7 +848,7 @@ export default function EditorPage() {
                                             />
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Line Height: {activeText.lineHeight ?? 1.2}</Label>
+                                            <Label className="text-xs text-muted-foreground">Line Height: {activeText.lineHeight ?? 1.2}</Label>
                                             <Slider
                                                 value={[activeText.lineHeight ?? 1.2]}
                                                 onValueChange={([val]) => handleTextChange('lineHeight', val)}
@@ -862,9 +862,9 @@ export default function EditorPage() {
                                     <Separator />
 
                                     <div className="flex flex-col gap-2 w-full">
-                                        <Label className="text-xs text-[var(--muted-foreground)] mb-1">Text Position</Label>
+                                        <Label className="text-xs text-muted-foreground mb-1">Text Position</Label>
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Horizontal (X): {activeText.sliderX ?? 0}</Label>
+                                            <Label className="text-xs text-muted-foreground">Horizontal (X): {activeText.sliderX ?? 0}</Label>
                                             <Slider
                                                 value={[activeText.sliderX ?? 0]}
                                                 onValueChange={([val]) => handleTextChange('sliderX', val)}
@@ -874,7 +874,7 @@ export default function EditorPage() {
                                             />
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Vertical (Y): {activeText.sliderY ?? 0}</Label>
+                                            <Label className="text-xs text-muted-foreground">Vertical (Y): {activeText.sliderY ?? 0}</Label>
                                             <Slider
                                                 value={[activeText.sliderY ?? 0]}
                                                 onValueChange={([val]) => handleTextChange('sliderY', val)}
@@ -891,8 +891,8 @@ export default function EditorPage() {
                                     <div className="flex flex-col gap-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <IconLayersIntersect className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Text Shadow</Label>
+                                                <IconLayersIntersect className="w-4 h-4 text-muted-foreground" />
+                                                <Label className="text-xs text-muted-foreground">Text Shadow</Label>
                                             </div>
                                             <Switch
                                                 checked={activeText.textShadowEnabled ?? false}
@@ -904,12 +904,12 @@ export default function EditorPage() {
                                             <>
                                                 {/* Shadow Color */}
                                                 <div className="flex flex-col gap-2">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Shadow Color</Label>
+                                                    <Label className="text-xs text-muted-foreground">Shadow Color</Label>
                                                     <div className="flex items-center gap-2 w-full relative">
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <span
-                                                                    className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                                                                    className="w-6 h-6 rounded-full aspect-square border border-sidebar-border absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                                     style={{ backgroundColor: activeText.textShadowColor ?? '#000000' }}
                                                                 />
                                                             </PopoverTrigger>
@@ -936,7 +936,7 @@ export default function EditorPage() {
                                                 {/* Shadow Position and Blur */}
                                                 <div className="flex flex-col gap-3">
                                                     <div className="flex flex-col gap-2">
-                                                        <Label className="text-xs text-[var(--muted-foreground)]">Shadow X Offset: {activeText.textShadowOffsetX ?? 2}px</Label>
+                                                        <Label className="text-xs text-muted-foreground">Shadow X Offset: {activeText.textShadowOffsetX ?? 2}px</Label>
                                                         <Slider
                                                             value={[activeText.textShadowOffsetX ?? 2]}
                                                             onValueChange={([val]) => handleTextChange('textShadowOffsetX', val)}
@@ -946,7 +946,7 @@ export default function EditorPage() {
                                                         />
                                                     </div>
                                                     <div className="flex flex-col gap-2">
-                                                        <Label className="text-xs text-[var(--muted-foreground)]">Shadow Y Offset: {activeText.textShadowOffsetY ?? 2}px</Label>
+                                                        <Label className="text-xs text-muted-foreground">Shadow Y Offset: {activeText.textShadowOffsetY ?? 2}px</Label>
                                                         <Slider
                                                             value={[activeText.textShadowOffsetY ?? 2]}
                                                             onValueChange={([val]) => handleTextChange('textShadowOffsetY', val)}
@@ -956,7 +956,7 @@ export default function EditorPage() {
                                                         />
                                                     </div>
                                                     <div className="flex flex-col gap-2">
-                                                        <Label className="text-xs text-[var(--muted-foreground)]">Shadow Blur: {activeText.textShadowBlur ?? 4}px</Label>
+                                                        <Label className="text-xs text-muted-foreground">Shadow Blur: {activeText.textShadowBlur ?? 4}px</Label>
                                                         <Slider
                                                             value={[activeText.textShadowBlur ?? 4]}
                                                             onValueChange={([val]) => handleTextChange('textShadowBlur', val)}
@@ -976,8 +976,8 @@ export default function EditorPage() {
                                     <div className="flex flex-col gap-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <IconBackground className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Text Background</Label>
+                                                <IconBackground className="w-4 h-4 text-muted-foreground" />
+                                                <Label className="text-xs text-muted-foreground">Text Background</Label>
                                             </div>
                                             <Switch
                                                 checked={activeText.textBackgroundEnabled ?? false}
@@ -989,12 +989,12 @@ export default function EditorPage() {
                                             <>
                                                 {/* Background Color */}
                                                 <div className="flex flex-col gap-2">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Color</Label>
+                                                    <Label className="text-xs text-muted-foreground">Background Color</Label>
                                                     <div className="flex items-center gap-2 w-full relative">
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <span
-                                                                    className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                                                                    className="w-6 h-6 rounded-full aspect-square border border-sidebar-border absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                                     style={{ backgroundColor: activeText.textBackgroundColor ?? '#ffffff' }}
                                                                 />
                                                             </PopoverTrigger>
@@ -1020,7 +1020,7 @@ export default function EditorPage() {
 
                                                 {/* Background Opacity */}
                                                 <div className="flex flex-col gap-2">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Opacity: {Math.round((activeText.textBackgroundOpacity ?? 0.7) * 100)}%</Label>
+                                                    <Label className="text-xs text-muted-foreground">Background Opacity: {Math.round((activeText.textBackgroundOpacity ?? 0.7) * 100)}%</Label>
                                                     <Slider
                                                         value={[activeText.textBackgroundOpacity ?? 0.7]}
                                                         onValueChange={([val]) => handleTextChange('textBackgroundOpacity', val)}
@@ -1031,7 +1031,7 @@ export default function EditorPage() {
 
                                                 {/* Background Padding */}
                                                 <div className="flex flex-col gap-2">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Padding: {activeText.textBackgroundPadding ?? 8}px</Label>
+                                                    <Label className="text-xs text-muted-foreground">Background Padding: {activeText.textBackgroundPadding ?? 8}px</Label>
                                                     <Slider
                                                         value={[activeText.textBackgroundPadding ?? 8]}
                                                         onValueChange={([val]) => handleTextChange('textBackgroundPadding', val)}
@@ -1051,13 +1051,13 @@ export default function EditorPage() {
                             {activeTab === "image" && (
                                 <div className="flex flex-col gap-4">
                                     <div className="flex flex-col gap-4">
-                                        <Label className="text-xs text-[var(--muted-foreground)] font-medium">Background</Label>
+                                        <Label className="text-xs text-muted-foreground font-medium">Background</Label>
                                         <div className="flex flex-col gap-3">
                                             {/* Custom Background Toggle */}
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
-                                                    <IconBackground className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Custom Background</Label>
+                                                    <IconBackground className="w-4 h-4 text-muted-foreground" />
+                                                    <Label className="text-xs text-muted-foreground">Custom Background</Label>
                                                 </div>
                                                 <Switch
                                                     checked={useCustomBg}
@@ -1068,12 +1068,12 @@ export default function EditorPage() {
                                             {/* Custom Background Color Picker */}
                                             {useCustomBg && (
                                                 <div className="flex flex-col gap-2 w-full">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Color</Label>
+                                                    <Label className="text-xs text-muted-foreground">Background Color</Label>
                                                     <div className="flex items-center gap-2 w-full relative">
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <span
-                                                                    className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                                                                    className="w-6 h-6 rounded-full aspect-square border border-sidebar-border absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                                     style={{ backgroundColor: customBgColor }}
                                                                 />
                                                             </PopoverTrigger>
@@ -1099,7 +1099,7 @@ export default function EditorPage() {
                                             {!useCustomBg && (
                                                 <>
                                                     <div className="flex flex-col gap-2">
-                                                        <Label className="text-xs text-[var(--muted-foreground)]">Brightness: {bgBrightness}%</Label>
+                                                        <Label className="text-xs text-muted-foreground">Brightness: {bgBrightness}%</Label>
                                                         <Slider
                                                             value={[bgBrightness]}
                                                             onValueChange={([val]) => setBgBrightness(val)}
@@ -1108,7 +1108,7 @@ export default function EditorPage() {
                                                         />
                                                     </div>
                                                     <div className="flex flex-col gap-2">
-                                                        <Label className="text-xs text-[var(--muted-foreground)]">Contrast: {bgContrast}%</Label>
+                                                        <Label className="text-xs text-muted-foreground">Contrast: {bgContrast}%</Label>
                                                         <Slider
                                                             value={[bgContrast]}
                                                             onValueChange={([val]) => setBgContrast(val)}
@@ -1121,7 +1121,7 @@ export default function EditorPage() {
 
                                             {/* Blur (always available) */}
                                             <div className="flex flex-col gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Blur: {bgBlur}px</Label>
+                                                <Label className="text-xs text-muted-foreground">Blur: {bgBlur}px</Label>
                                                 <Slider
                                                     value={[bgBlur]}
                                                     onValueChange={([val]) => setBgBlur(val)}
@@ -1135,10 +1135,10 @@ export default function EditorPage() {
                                     <Separator />
 
                                     <div className="flex flex-col gap-4">
-                                        <Label className="text-xs text-[var(--muted-foreground)] font-medium">Foreground</Label>
+                                        <Label className="text-xs text-muted-foreground font-medium">Foreground</Label>
                                         <div className="flex flex-col gap-3">
                                             <div className="flex flex-col gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Brightness: {fgBrightness}%</Label>
+                                                <Label className="text-xs text-muted-foreground">Brightness: {fgBrightness}%</Label>
                                                 <Slider
                                                     value={[fgBrightness]}
                                                     onValueChange={([val]) => setFgBrightness(val)}
@@ -1147,7 +1147,7 @@ export default function EditorPage() {
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Contrast: {fgContrast}%</Label>
+                                                <Label className="text-xs text-muted-foreground">Contrast: {fgContrast}%</Label>
                                                 <Slider
                                                     value={[fgContrast]}
                                                     onValueChange={([val]) => setFgContrast(val)}
@@ -1156,7 +1156,7 @@ export default function EditorPage() {
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Blur: {fgBlur}px</Label>
+                                                <Label className="text-xs text-muted-foreground">Blur: {fgBlur}px</Label>
                                                 <Slider
                                                     value={[fgBlur]}
                                                     onValueChange={([val]) => setFgBlur(val)}
@@ -1171,7 +1171,7 @@ export default function EditorPage() {
                         </div>
 
                         {/* Sticky Reset Button */}
-                        <div className="flex-shrink-0 p-3 pt-2 border-t border-[var(--border)] bg-[var(--secondary)]/30">
+                        <div className="flex-shrink-0 p-3 pt-2 border-t border-sidebar-border bg-sidebar-accent rounded-b-[var(--radius-sm)]">
                             {activeTab === "text" && (
                                 <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-9 text-xs bg-background hover:bg-accent cursor-pointer">
                                     <IconRefresh className="w-3 h-3 mr-1" />
@@ -1192,21 +1192,25 @@ export default function EditorPage() {
                 {/* Main Canvas Area - Full Width */}
                 {!image ? (
                     /* Full Page Upload Section */
-                    <div className="flex flex-col h-[300px] sm:h-[400px] md:h-[500px] lg:h-full w-full mx-auto items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border border-[var(--border)] overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
-                        <IconUpload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
+                    <div className="flex flex-col h-[300px] sm:h-[400px] md:h-[500px] lg:h-full w-full mx-auto items-center justify-center bg-card backdrop-blur-sm rounded-[var(--radius-sm)] border border-border overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
+                        <IconUpload className="w-8 h-8 md:w-12 md:h-12 mb-2 md:mb-4" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
-                        <p className="text-[var(--muted-foreground)] mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
-                        <Button onClick={() => document.getElementById('image-upload')?.click()} className="w-auto text-xs flex items-center gap-2 cursor-pointer">
+                        <p className="text-muted-foreground mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
+                        <Button
+                            size="sm"
+                            onClick={() => document.getElementById('image-upload')?.click()}
+                            className="mx-auto text-xs flex items-center gap-2 cursor-pointer"
+                        >
                             <IconUpload className="w-4 h-4" />
                             Upload Image
                         </Button>
                         <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     </div>
                 ) : (
-                    <section className="flex flex-col w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border border-[var(--border)] overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
+                    <section className="flex flex-col w-full h-[300px] sm:h-[400px] md:h-[500px] lg:h-full items-center justify-center bg-card backdrop-blur-sm rounded-[var(--radius-sm)] border border-border overflow-hidden relative order-1 lg:order-2 mb-2 lg:mb-0">
                         {loading && (
-                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[var(--background)]/60 backdrop-blur-sm animate-fade-in">
-                                <span className="text-lg font-semibold text-[var(--foreground)] animate-pulse">
+                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm animate-fade-in">
+                                <span className="text-lg font-semibold text-foreground animate-pulse">
                                     {processingStep || 'Processing image...'}
                                 </span>
                             </div>
@@ -1218,7 +1222,7 @@ export default function EditorPage() {
                             />
                         </div>
                         {/* Floating Download Dock */}
-                        <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-1 z-40 gap-2 items-center  bg-[var(--secondary)]/95 backdrop-blur-md rounded-[var(--radius-lg)] shadow-xl border border-[var(--border)] p-1">
+                        <div className="hidden lg:flex fixed left-1/2 -translate-x-1/2 bottom-1 z-40 gap-2 items-center  bg-popover backdrop-blur-md rounded-[var(--radius-lg)] shadow-xl border border-border p-1">
                             {/* Action Buttons */}
                             <Button
                                 onClick={downloadImage}
@@ -1229,7 +1233,7 @@ export default function EditorPage() {
                             </Button>
                             <Button
                                 onClick={tryAnotherImage}
-                                className="h-9 flex items-center gap-2 text-xs cursor-pointer border-[var(--border)] bg-background text-foreground hover:bg-background/80 rounded-[var(--radius-sm)] transition-colors"
+                                className="h-9 flex items-center gap-2 text-xs cursor-pointer border-border bg-card text-foreground hover:bg-accent rounded-[var(--radius-sm)] transition-colors"
                             >
                                 <IconRefresh className="w-4 h-4" />
                                 Try Another

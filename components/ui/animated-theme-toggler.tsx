@@ -66,28 +66,43 @@ export const AnimatedThemeToggler = ({ className }: AnimatedThemeTogglerProps) =
     }).ready;
 
     const { top, left, width, height } = buttonRef.current.getBoundingClientRect();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _y = top + height / 2;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _x = left + width / 2;
+    // Center of the button
+    const cx = left + width / 2;
+    const cy = top + height / 2;
+    // How far the corners are from the center
+    const maxX = Math.max(cx, window.innerWidth - cx);
+    const maxY = Math.max(cy, window.innerHeight - cy);
+    const maxRadius = Math.hypot(maxX, maxY);
 
-    const right = window.innerWidth - left;
-    const bottom = window.innerHeight - top;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const _maxRad = Math.hypot(Math.max(left, right), Math.max(top, bottom));
+    // Use a circle-like clip-path polygon growing from the center of the button
+    const numPoints = 24;
+    const radiusStart = 0; // Initial circle radius
+    const radiusEnd = maxRadius; // Final circle radius
+
+    // Helper to create circle polygon points
+    function circlePolygon(cx: number, cy: number, r: number, points: number) {
+      const arr: string[] = [];
+      for (let i = 0; i < points; i++) {
+        const angle = (2 * Math.PI * i) / points;
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        arr.push(`${(x / window.innerWidth) * 100}% ${(y / window.innerHeight) * 100}%`);
+      }
+      return `polygon(${arr.join(", ")})`;
+    }
 
     document.documentElement.animate(
       {
         clipPath: [
-          `polygon(100% 0, 100% 0, 100% 100%, 100% 100%)`,
-          `polygon(100% 0, 0 0, 0 100%, 100% 100%)`,
+          circlePolygon(cx, cy, radiusStart, numPoints), // small circle at center
+          circlePolygon(cx, cy, radiusEnd, numPoints),   // large circle covering viewport
         ],
       },
       {
         duration: 700,
         easing: "ease-in-out",
         pseudoElement: "::view-transition-new(root)",
-      },
+      }
     );
   };
 

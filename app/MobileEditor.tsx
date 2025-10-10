@@ -206,7 +206,7 @@ export default function MobileEditor(props: MobileEditorProps) {
         link.download = filename;
         link.href = canvas.toDataURL('image/jpeg', quality);
         link.click();
-        
+
         // Cleanup blob URL
         setTimeout(() => {
             URL.revokeObjectURL(link.href);
@@ -408,7 +408,7 @@ export default function MobileEditor(props: MobileEditorProps) {
         >
             {/* Sticky Header with gap and rounded corners */}
             <div className="flex-shrink-0 p-2">
-                <header className="flex h-10 items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-md rounded-[var(--radius-sm)] overflow-hidden border-b border-[var(--border)] w-full max-w-full mx-auto">
+                <header className="flex h-10 items-center justify-center bg-sidebar backdrop-blur-md rounded-[var(--radius-sm)] overflow-hidden border-b border-sidebar-border w-full max-w-full mx-auto">
                     <h1 className="text-xs font-semibold flex items-center gap-2 p-3">
                         <Image src="/icon.svg" alt="FrameCaption" width={20} height={20} />
                         FrameCaption
@@ -420,21 +420,25 @@ export default function MobileEditor(props: MobileEditorProps) {
             {/* Flexible Canvas Area */}
             <div className="flex-1 flex flex-col px-2 pb-2 min-h-0">
                 {!image ? (
-                    <div className="flex flex-col flex-1 w-full mx-auto items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-[var(--border)] overflow-hidden relative">
-                        <IconUpload className="w-12 h-12 md:w-16 md:h-16 text-[var(--primary)] mb-4 md:mb-6" />
+                    <div className="flex flex-col flex-1 w-full mx-auto items-center justify-center bg-card backdrop-blur-sm rounded-[var(--radius-sm)] border border-border overflow-hidden relative">
+                        <IconUpload className="w-8 h-8 md:w-12 md:h-12 mb-2 md:mb-4" />
                         <h1 className="text-xs font-semibold mb-2">Upload Your Image</h1>
-                        <p className="text-[var(--muted-foreground)] mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
-                        <Button onClick={() => document.getElementById('image-upload')?.click()} className="h-10 w-auto text-xs flex items-center gap-2 cursor-pointer">
+                        <p className="text-muted-foreground mb-4 md:mb-6 text-center text-xs px-4">Choose an image to add text behind elements</p>
+                        <Button
+                            size="sm"
+                            onClick={() => document.getElementById('image-upload')?.click()}
+                            className="mx-auto text-xs flex items-center gap-2 cursor-pointer"
+                        >
                             <IconUpload className="w-4 h-4" />
                             Upload Image
                         </Button>
                         <Input id="image-upload" type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                     </div>
                 ) : (
-                    <section className="flex flex-col flex-1 w-full items-center justify-center bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-[var(--border)] overflow-hidden relative min-h-0">
+                    <section className="flex flex-col flex-1 w-full items-center justify-center bg-card backdrop-blur-sm rounded-[var(--radius-sm)] border-b border-border overflow-hidden relative min-h-0">
                         {loading && (
-                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[var(--background)]/60 backdrop-blur-sm animate-fade-in">
-                                <span className="text-lg font-semibold text-[var(--foreground)] animate-pulse">
+                            <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/60 backdrop-blur-sm animate-fade-in">
+                                <span className="text-lg font-semibold text-foreground animate-pulse">
                                     {processingStep || 'Processing image...'}
                                 </span>
                             </div>
@@ -446,17 +450,17 @@ export default function MobileEditor(props: MobileEditorProps) {
                             />
                         </div>
                         {/* Floating Download Dock - Mobile/Tablet (smaller) */}
-                        <div className="fixed bottom-0.5 left-1/2 -translate-x-1/2 z-40 flex lg:hidden bg-[var(--secondary)]/95 backdrop-blur-md rounded-[var(--radius-lg)] shadow-xl border border-[var(--border)] p-1 gap-1 items-center">
+                        <div className="fixed bottom-0.5 left-1/2 -translate-x-1/2 z-40 flex lg:hidden bg-popover backdrop-blur-md rounded-[var(--radius-lg)] shadow-xl border border-border p-1 gap-1 items-center">
                             <Button
                                 onClick={downloadImageForMobile}
-                                className="h-8 flex-1 flex items-center justify-center gap-1 text-[0.7rem] cursor-pointer border border-[var(--border)] bg-primary hover:bg-primary/80 text-primary-foreground rounded-[var(--radius-sm)] transition-colors"
+                                className="h-8 flex-1 flex items-center justify-center gap-1 text-[0.7rem] cursor-pointer border border-border bg-primary hover:bg-primary/80 text-primary-foreground rounded-[var(--radius-sm)] transition-colors"
                             >
                                 <IconDownload className="w-3.5 h-3.5" />
                                 Download
                             </Button>
                             <Button
                                 onClick={tryAnotherImage}
-                                className="h-8 flex-1 flex items-center justify-center gap-1 text-[0.7rem] cursor-pointer border border-[var(--border)] bg-background text-foreground hover:bg-background/80 rounded-[var(--radius-sm)] transition-colors"
+                                className="h-8 flex-1 flex items-center justify-center gap-1 text-[0.7rem] cursor-pointer border border-border bg-background text-foreground hover:bg-accent rounded-[var(--radius-sm)] transition-colors"
                             >
                                 <IconRefresh className="w-3.5 h-3.5" />
                                 Try Another
@@ -476,20 +480,20 @@ export default function MobileEditor(props: MobileEditorProps) {
                     <TabsList className="flex-shrink-0 w-full flex items-center gap-1 h-10 rounded-[var(--radius-sm)]">
                         <TabsTrigger
                             value="text"
-                            className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
+                            className="flex-1 h-10 text-xs border border-border p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
                         >
                             <IconTypography className="w-2.5 h-2.5" />
                             <span className="text-[0.625rem]">Text</span>
                         </TabsTrigger>
                         <TabsTrigger
                             value="image"
-                            className="flex-1 h-10 text-xs border border-[var(--border)] p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
+                            className="flex-1 h-10 text-xs border border-border p-1 items-center justify-center gap-0.5 min-h-0 rounded-[var(--radius-sm)] cursor-pointer"
                         >
                             <IconPhoto className="w-2.5 h-2.5" />
                             <span className="text-[0.625rem]">Image</span>
                         </TabsTrigger>
                     </TabsList>
-                    <section className="flex-1 w-full mt-2 bg-[var(--secondary)]/50 backdrop-blur-sm rounded-[var(--radius-sm)] flex flex-col border border-[var(--border)] min-h-0">
+                    <section className="flex-1 w-full mt-2 bg-sidebar backdrop-blur-sm rounded-[var(--radius-sm)] flex flex-col border border-sidebar-border min-h-0">
                         {/* Scrollable Content Area */}
                         <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar p-3 min-h-0">
                             {activeTab === 'text' && (
@@ -497,7 +501,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                     {/* Text Layers */}
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center justify-between">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Text Layers</Label>
+                                            <Label className="text-xs text-muted-foreground">Text Layers</Label>
                                             <Button variant="outline" size="sm" onClick={addText} className="w-full text-xs h-7 px-2 cursor-pointer">
                                                 Add
                                             </Button>
@@ -506,7 +510,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             {texts.slice().reverse().map((text, index) => {
                                                 const originalIndex = texts.length - 1 - index;
                                                 return (
-                                                    <div key={originalIndex} className={`flex items-center justify-between p-2 rounded-[var(--radius-sm)] cursor-pointer transition-all ${activeTextIndex === originalIndex ? 'bg-primary/10' : 'hover:bg-primary/5'}`} onClick={() => setActiveTextIndex(originalIndex)}>
+                                                    <div key={originalIndex} className={`flex items-center justify-between p-2 rounded-[var(--radius-sm)] cursor-pointer transition-all ${activeTextIndex === originalIndex ? 'bg-sidebar-accent' : 'hover:bg-sidebar-accent'}`} onClick={() => setActiveTextIndex(originalIndex)}>
                                                         <span className="truncate text-xs" style={{ fontFamily: text.font }}>{text.content}</span>
                                                         <div className="flex items-center gap-1">
                                                             {/* Mobile: Up/Down controls (fixed for reversed order) */}
@@ -531,8 +535,8 @@ export default function MobileEditor(props: MobileEditorProps) {
                                     {/* Layer Position Switch */}
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <IconArrowNarrowUp className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                            <Label className="text-xs text-[var(--muted-foreground)]">On Top</Label>
+                                            <IconArrowNarrowUp className="w-4 h-4 text-muted-foreground" />
+                                            <Label className="text-xs text-muted-foreground">On Top</Label>
                                         </div>
                                         <Switch
                                             checked={activeText.onTop ?? false}
@@ -542,7 +546,7 @@ export default function MobileEditor(props: MobileEditorProps) {
 
                                     {/* Text Content */}
                                     <div className="flex flex-col gap-2">
-                                        <Label className="text-xs text-[var(--muted-foreground)]">Content</Label>
+                                        <Label className="text-xs text-muted-foreground">Content</Label>
                                         <Textarea
                                             value={activeText.content}
                                             onChange={(e) => handleTextChange('content', e.target.value)}
@@ -553,7 +557,7 @@ export default function MobileEditor(props: MobileEditorProps) {
 
                                     {/* Font Selection */}
                                     <div className="flex flex-col gap-2">
-                                        <Label className="text-xs text-[var(--muted-foreground)]">Font</Label>
+                                        <Label className="text-xs text-muted-foreground">Font</Label>
                                         <Select value={activeText.font} onValueChange={(value) => handleTextChange('font', value)}>
                                             <SelectTrigger className="w-full h-9 text-xs">
                                                 <SelectValue placeholder="Select font" />
@@ -572,8 +576,8 @@ export default function MobileEditor(props: MobileEditorProps) {
                                     {/* Font Style Switch */}
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <IconItalic className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Italic</Label>
+                                            <IconItalic className="w-4 h-4 text-muted-foreground" />
+                                            <Label className="text-xs text-muted-foreground">Italic</Label>
                                         </div>
                                         <Switch
                                             checked={activeText.fontStyle === 'italic'}
@@ -586,12 +590,12 @@ export default function MobileEditor(props: MobileEditorProps) {
 
                                     {/* Color */}
                                     <div className="flex flex-col gap-2 w-full">
-                                        <Label className="text-xs text-[var(--muted-foreground)]">Color</Label>
+                                        <Label className="text-xs text-muted-foreground">Color</Label>
                                         <div className="flex items-center gap-2 w-full relative">
                                             <Popover>
                                                 <PopoverTrigger asChild>
                                                     <span
-                                                        className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                                                        className="w-6 h-6 rounded-full aspect-square border border-sidebar-border absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                         style={{ backgroundColor: activeText.color }}
                                                     />
                                                 </PopoverTrigger>
@@ -618,7 +622,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                     {/* Typography Controls */}
                                     <div className="flex flex-col gap-3">
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Font Weight: {parseInt(activeText.fontWeight?.toString() ?? '700')}</Label>
+                                            <Label className="text-xs text-muted-foreground">Font Weight: {parseInt(activeText.fontWeight?.toString() ?? '700')}</Label>
                                             <Slider
                                                 value={[parseInt(activeText.fontWeight?.toString() ?? '700')]}
                                                 onValueChange={([val]) => handleMobileTextChange('fontWeight', val.toString())}
@@ -628,7 +632,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             />
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Font Size: {activeText.fontSize}%</Label>
+                                            <Label className="text-xs text-muted-foreground">Font Size: {activeText.fontSize}%</Label>
                                             <Slider
                                                 value={[activeText.fontSize]}
                                                 onValueChange={([val]) => handleMobileTextChange('fontSize', val)}
@@ -638,7 +642,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             />
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Opacity: {Math.round((activeText.opacity ?? 1) * 100)}%</Label>
+                                            <Label className="text-xs text-muted-foreground">Opacity: {Math.round((activeText.opacity ?? 1) * 100)}%</Label>
                                             <Slider
                                                 value={[activeText.opacity ?? 1]}
                                                 onValueChange={([val]) => handleMobileTextChange('opacity', val)}
@@ -647,7 +651,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             />
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Line Height: {activeText.lineHeight ?? 1.2}</Label>
+                                            <Label className="text-xs text-muted-foreground">Line Height: {activeText.lineHeight ?? 1.2}</Label>
                                             <Slider
                                                 value={[activeText.lineHeight ?? 1.2]}
                                                 onValueChange={([val]) => handleMobileTextChange('lineHeight', val)}
@@ -662,9 +666,9 @@ export default function MobileEditor(props: MobileEditorProps) {
 
                                     {/* Match desktop X/Y sliders for text position */}
                                     <div className="flex flex-col gap-2 w-full">
-                                        <Label className="text-xs text-[var(--muted-foreground)] mb-1">Text Position</Label>
+                                        <Label className="text-xs text-muted-foreground mb-1">Text Position</Label>
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Horizontal (X): {activeText.sliderX ?? 0}</Label>
+                                            <Label className="text-xs text-muted-foreground">Horizontal (X): {activeText.sliderX ?? 0}</Label>
                                             <Slider
                                                 value={[activeText.sliderX ?? 0]}
                                                 onValueChange={([val]) => handleMobileTextChange('sliderX', val)}
@@ -674,7 +678,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             />
                                         </div>
                                         <div className="flex flex-col gap-2">
-                                            <Label className="text-xs text-[var(--muted-foreground)]">Vertical (Y): {activeText.sliderY ?? 0}</Label>
+                                            <Label className="text-xs text-muted-foreground">Vertical (Y): {activeText.sliderY ?? 0}</Label>
                                             <Slider
                                                 value={[activeText.sliderY ?? 0]}
                                                 onValueChange={([val]) => handleMobileTextChange('sliderY', val)}
@@ -691,8 +695,8 @@ export default function MobileEditor(props: MobileEditorProps) {
                                     <div className="flex flex-col gap-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <IconLayersIntersect className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Text Shadow</Label>
+                                                <IconLayersIntersect className="w-4 h-4 text-muted-foreground" />
+                                                <Label className="text-xs text-muted-foreground">Text Shadow</Label>
                                             </div>
                                             <Switch
                                                 checked={activeText.textShadowEnabled ?? false}
@@ -704,12 +708,12 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             <>
                                                 {/* Shadow Color */}
                                                 <div className="flex flex-col gap-2">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Shadow Color</Label>
+                                                    <Label className="text-xs text-muted-foreground">Shadow Color</Label>
                                                     <div className="flex items-center gap-2 w-full relative">
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <span
-                                                                    className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                                                                    className="w-6 h-6 rounded-full aspect-square border border-sidebar-border absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                                     style={{ backgroundColor: activeText.textShadowColor ?? '#000000' }}
                                                                 />
                                                             </PopoverTrigger>
@@ -736,7 +740,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 {/* Shadow Position and Blur */}
                                                 <div className="flex flex-col gap-3">
                                                     <div className="flex flex-col gap-2">
-                                                        <Label className="text-xs text-[var(--muted-foreground)]">Shadow X Offset: {activeText.textShadowOffsetX ?? 2}px</Label>
+                                                        <Label className="text-xs text-muted-foreground">Shadow X Offset: {activeText.textShadowOffsetX ?? 2}px</Label>
                                                         <Slider
                                                             value={[activeText.textShadowOffsetX ?? 2]}
                                                             onValueChange={([val]) => handleMobileTextChange('textShadowOffsetX', val)}
@@ -746,7 +750,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                         />
                                                     </div>
                                                     <div className="flex flex-col gap-2">
-                                                        <Label className="text-xs text-[var(--muted-foreground)]">Shadow Y Offset: {activeText.textShadowOffsetY ?? 2}px</Label>
+                                                        <Label className="text-xs text-muted-foreground">Shadow Y Offset: {activeText.textShadowOffsetY ?? 2}px</Label>
                                                         <Slider
                                                             value={[activeText.textShadowOffsetY ?? 2]}
                                                             onValueChange={([val]) => handleMobileTextChange('textShadowOffsetY', val)}
@@ -756,7 +760,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                         />
                                                     </div>
                                                     <div className="flex flex-col gap-2">
-                                                        <Label className="text-xs text-[var(--muted-foreground)]">Shadow Blur: {activeText.textShadowBlur ?? 4}px</Label>
+                                                        <Label className="text-xs text-muted-foreground">Shadow Blur: {activeText.textShadowBlur ?? 4}px</Label>
                                                         <Slider
                                                             value={[activeText.textShadowBlur ?? 4]}
                                                             onValueChange={([val]) => handleMobileTextChange('textShadowBlur', val)}
@@ -776,8 +780,8 @@ export default function MobileEditor(props: MobileEditorProps) {
                                     <div className="flex flex-col gap-3">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
-                                                <IconBackground className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Text Background</Label>
+                                                <IconBackground className="w-4 h-4 text-muted-foreground" />
+                                                <Label className="text-xs text-muted-foreground">Text Background</Label>
                                             </div>
                                             <Switch
                                                 checked={activeText.textBackgroundEnabled ?? false}
@@ -789,12 +793,12 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             <>
                                                 {/* Background Color */}
                                                 <div className="flex flex-col gap-2">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Color</Label>
+                                                    <Label className="text-xs text-muted-foreground">Background Color</Label>
                                                     <div className="flex items-center gap-2 w-full relative">
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <span
-                                                                    className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                                                                    className="w-6 h-6 rounded-full aspect-square border border-sidebar-border absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                                     style={{ backgroundColor: activeText.textBackgroundColor ?? '#ffffff' }}
                                                                 />
                                                             </PopoverTrigger>
@@ -820,7 +824,7 @@ export default function MobileEditor(props: MobileEditorProps) {
 
                                                 {/* Background Opacity */}
                                                 <div className="flex flex-col gap-2">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Opacity: {Math.round((activeText.textBackgroundOpacity ?? 0.7) * 100)}%</Label>
+                                                    <Label className="text-xs text-muted-foreground">Background Opacity: {Math.round((activeText.textBackgroundOpacity ?? 0.7) * 100)}%</Label>
                                                     <Slider
                                                         value={[activeText.textBackgroundOpacity ?? 0.7]}
                                                         onValueChange={([val]) => handleMobileTextChange('textBackgroundOpacity', val)}
@@ -831,7 +835,7 @@ export default function MobileEditor(props: MobileEditorProps) {
 
                                                 {/* Background Padding */}
                                                 <div className="flex flex-col gap-2">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Padding: {activeText.textBackgroundPadding ?? 8}px</Label>
+                                                    <Label className="text-xs text-muted-foreground">Background Padding: {activeText.textBackgroundPadding ?? 8}px</Label>
                                                     <Slider
                                                         value={[activeText.textBackgroundPadding ?? 8]}
                                                         onValueChange={([val]) => handleMobileTextChange('textBackgroundPadding', val)}
@@ -852,13 +856,13 @@ export default function MobileEditor(props: MobileEditorProps) {
                             {activeTab === 'image' && (
                                 <div className="flex flex-col gap-4">
                                     <div className="flex flex-col gap-4">
-                                        <Label className="text-xs text-[var(--muted-foreground)] font-medium">Background</Label>
+                                        <Label className="text-xs text-muted-foreground font-medium">Background</Label>
                                         <div className="flex flex-col gap-3">
                                             {/* Custom Background Toggle */}
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-2">
-                                                    <IconBackground className="w-4 h-4 text-[var(--muted-foreground)]" />
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Custom Background</Label>
+                                                    <IconBackground className="w-4 h-4 text-muted-foreground" />
+                                                    <Label className="text-xs text-muted-foreground">Custom Background</Label>
                                                 </div>
                                                 <Switch
                                                     checked={useCustomBg}
@@ -869,12 +873,12 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             {/* Custom Background Color Picker */}
                                             {useCustomBg && (
                                                 <div className="flex flex-col gap-2 w-full">
-                                                    <Label className="text-xs text-[var(--muted-foreground)]">Background Color</Label>
+                                                    <Label className="text-xs text-muted-foreground">Background Color</Label>
                                                     <div className="flex items-center gap-2 w-full relative">
                                                         <Popover>
                                                             <PopoverTrigger asChild>
                                                                 <span
-                                                                    className="w-6 h-6 rounded-full aspect-square border border-[var(--border)] absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
+                                                                    className="w-6 h-6 rounded-full aspect-square border border-sidebar-border absolute left-2 top-1/2 -translate-y-1/2 cursor-pointer"
                                                                     style={{ backgroundColor: customBgColor }}
                                                                 />
                                                             </PopoverTrigger>
@@ -900,7 +904,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                             {!useCustomBg && (
                                                 <>
                                                     <div className="flex flex-col gap-2">
-                                                        <Label className="text-xs text-[var(--muted-foreground)]">Brightness: {bgBrightness}%</Label>
+                                                        <Label className="text-xs text-muted-foreground">Brightness: {bgBrightness}%</Label>
                                                         <Slider
                                                             value={[bgBrightness]}
                                                             onValueChange={([val]) => setBgBrightness(val)}
@@ -909,7 +913,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                         />
                                                     </div>
                                                     <div className="flex flex-col gap-2">
-                                                        <Label className="text-xs text-[var(--muted-foreground)]">Contrast: {bgContrast}%</Label>
+                                                        <Label className="text-xs text-muted-foreground">Contrast: {bgContrast}%</Label>
                                                         <Slider
                                                             value={[bgContrast]}
                                                             onValueChange={([val]) => setBgContrast(val)}
@@ -922,7 +926,7 @@ export default function MobileEditor(props: MobileEditorProps) {
 
                                             {/* Blur (always available) */}
                                             <div className="flex flex-col gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Blur: {bgBlur}px</Label>
+                                                <Label className="text-xs text-muted-foreground">Blur: {bgBlur}px</Label>
                                                 <Slider
                                                     value={[bgBlur]}
                                                     onValueChange={([val]) => setBgBlur(val)}
@@ -936,10 +940,10 @@ export default function MobileEditor(props: MobileEditorProps) {
                                     <Separator />
 
                                     <div className="flex flex-col gap-4">
-                                        <Label className="text-xs text-[var(--muted-foreground)] font-medium">Foreground</Label>
+                                        <Label className="text-xs text-muted-foreground font-medium">Foreground</Label>
                                         <div className="flex flex-col gap-3">
                                             <div className="flex flex-col gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Brightness: {fgBrightness}%</Label>
+                                                <Label className="text-xs text-muted-foreground">Brightness: {fgBrightness}%</Label>
                                                 <Slider
                                                     value={[fgBrightness]}
                                                     onValueChange={([val]) => setFgBrightness(val)}
@@ -948,7 +952,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Contrast: {fgContrast}%</Label>
+                                                <Label className="text-xs text-muted-foreground">Contrast: {fgContrast}%</Label>
                                                 <Slider
                                                     value={[fgContrast]}
                                                     onValueChange={([val]) => setFgContrast(val)}
@@ -957,7 +961,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                                                 />
                                             </div>
                                             <div className="flex flex-col gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Blur: {fgBlur}px</Label>
+                                                <Label className="text-xs text-muted-foreground">Blur: {fgBlur}px</Label>
                                                 <Slider
                                                     value={[fgBlur]}
                                                     onValueChange={([val]) => setFgBlur(val)}
@@ -973,7 +977,7 @@ export default function MobileEditor(props: MobileEditorProps) {
                             )}
                         </div>
                         {/* Fixed Reset Button */}
-                        <div className="flex-shrink-0 p-2 border-t border-[var(--border)] bg-[var(--secondary)]/30">
+                        <div className="flex-shrink-0 p-2 border-t border-sidebar-border bg-sidebar-accent">
                             {activeTab === 'text' && (
                                 <Button variant="outline" size="sm" onClick={resetTextEdits} className="w-full h-9 text-xs bg-background hover:bg-accent cursor-pointer">
                                     <IconRefresh className="w-3 h-3 mr-1" />
